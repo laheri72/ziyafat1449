@@ -1,7 +1,7 @@
 <?php
 // Database Configuration
 
-$host = '127.0.0.1';
+$host = 'auth-db2145.hstgr.io';
 $username = 'u719177696_ziyafatushukr';
 $password = 'Mufaddal25739';
 $database = 'u719177696_ZS1449';
