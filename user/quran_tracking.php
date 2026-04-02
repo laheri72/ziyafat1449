@@ -9,40 +9,6 @@ $css_path = '../assets/css/';
 $js_path = '../assets/js/';
 
 $user_id = $_SESSION['user_id'];
-$success = '';
-$error = '';
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $quran_number = intval($_POST['quran_number']);
-    $juz_number = intval($_POST['juz_number']);
-    
-    // Check if already completed
-    $check_sql = "SELECT is_completed FROM quran_progress WHERE user_id = ? AND quran_number = ? AND juz_number = ?";
-    $check_stmt = $conn->prepare($check_sql);
-    $check_stmt->bind_param("iii", $user_id, $quran_number, $juz_number);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
-    
-    if ($check_result->num_rows > 0) {
-        $row = $check_result->fetch_assoc();
-        if ($row['is_completed'] == 1) {
-            $error = 'This Juz is already marked as completed and cannot be unmarked.';
-        }
-    } else {
-        // Insert new completion
-        $sql = "INSERT INTO quran_progress (user_id, quran_number, juz_number, is_completed, completed_date) 
-                VALUES (?, ?, ?, 1, CURDATE())";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("iii", $user_id, $quran_number, $juz_number);
-        
-        if ($stmt->execute()) {
-            $success = 'Juz marked as completed successfully!';
-        } else {
-            $error = 'Failed to update progress.';
-        }
-    }
-}
 
 // Get all progress for this user
 $sql = "SELECT * FROM quran_progress WHERE user_id = ? ORDER BY quran_number, juz_number";
@@ -65,19 +31,72 @@ $quran_progress = get_quran_progress($conn, $user_id);
 require_once '../includes/header.php';
 ?>
 
+<style>
+    .juz-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        gap: 10px;
+        padding: 20px;
+    }
+    .juz-item {
+        width: 100%;
+        padding: 15px 5px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+        color: #333;
+        font-weight: bold;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        position: relative;
+    }
+    .juz-item:hover:not(.completed) {
+        border-color: var(--primary-500);
+        background: var(--primary-50);
+        transform: translateY(-2px);
+    }
+    .juz-item.selected {
+        border-color: var(--warning);
+        background: #fffbeb;
+        color: #92400e;
+    }
+    .juz-item.selected::after {
+        content: '\f067';
+        font-family: 'Font Awesome 6 Free';
+        position: absolute;
+        top: 2px;
+        right: 5px;
+        font-size: 0.7rem;
+    }
+    .juz-item.completed {
+        border-color: #4CAF50;
+        background: #4CAF50;
+        color: #fff;
+        cursor: default;
+    }
+    .floating-actions {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+        display: none;
+    }
+    .select-all-btn {
+        margin-left: 10px;
+        font-size: 0.8rem;
+        padding: 4px 10px;
+    }
+</style>
+
 <div class="container">
     <div class="page-header">
         <h1><i class="fas fa-quran"></i> Quran Recitation Tracking</h1>
-        <p>Track your progress across 4 Qurans (120 Juz total)</p>
+        <p>Select multiple Juz and save your progress without reloading.</p>
     </div>
 
-    <?php if ($error): ?>
-        <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?php echo $error; ?></div>
-    <?php endif; ?>
-
-    <?php if ($success): ?>
-        <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?php echo $success; ?></div>
-    <?php endif; ?>
+    <div id="ajax-alert" style="display: none;"></div>
 
     <!-- Overall Progress -->
     <div class="card">
@@ -86,11 +105,11 @@ require_once '../includes/header.php';
         </div>
         <div class="progress-container">
             <div class="progress-label">
-                <span class="progress-label-text">Total Progress: <?php echo $quran_progress['completed_juz']; ?> / 120 Juz (4 Qurans × 30 Juz)</span>
-                <span class="progress-label-value"><?php echo $quran_progress['progress_percentage']; ?>%</span>
+                <span class="progress-label-text" id="overall-label">Total Progress: <?php echo $quran_progress['completed_juz']; ?> / 120 Juz</span>
+                <span class="progress-label-value" id="overall-percent"><?php echo $quran_progress['progress_percentage']; ?>%</span>
             </div>
             <div class="progress-bar">
-                <div class="progress-fill" style="width: <?php echo $quran_progress['progress_percentage']; ?>%"></div>
+                <div class="progress-fill" id="overall-bar" style="width: <?php echo $quran_progress['progress_percentage']; ?>%"></div>
             </div>
         </div>
     </div>
@@ -105,48 +124,178 @@ require_once '../includes/header.php';
         }
         $quran_percentage = round(($completed_in_quran / 30) * 100, 2);
     ?>
-    <div class="card">
+    <div class="card" id="quran-card-<?php echo $quran; ?>">
         <div class="card-header">
-            <h3><i class="fas fa-book-quran"></i> Quran #<?php echo $quran; ?> - <?php echo $completed_in_quran; ?>/30 Juz (<?php echo $quran_percentage; ?>%)</h3>
+            <h3>
+                <i class="fas fa-book-quran"></i> Quran #<?php echo $quran; ?> - 
+                <span id="quran-count-<?php echo $quran; ?>"><?php echo $completed_in_quran; ?></span>/30 Juz 
+                (<span id="quran-percent-<?php echo $quran; ?>"><?php echo $quran_percentage; ?></span>%)
+            </h3>
+            <button type="button" class="btn btn-outline btn-sm select-all-btn" onclick="selectAll(<?php echo $quran; ?>)">
+                <i class="fas fa-check-double"></i> Select Remaining
+            </button>
         </div>
-        <div class="progress-container">
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: <?php echo $quran_percentage; ?>%"></div>
+        <div class="progress-container" style="padding: 0 20px;">
+            <div class="progress-bar" style="height: 8px;">
+                <div class="progress-fill" id="quran-bar-<?php echo $quran; ?>" style="width: <?php echo $quran_percentage; ?>%"></div>
             </div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 10px; padding: 20px;">
+        <div class="juz-grid">
             <?php for ($juz = 1; $juz <= 30; $juz++): 
                 $is_completed = isset($completed_juz[$quran][$juz]);
             ?>
-                <?php if ($is_completed): ?>
-                    <div style="width: 100%; padding: 15px 5px; border: 2px solid #4CAF50; border-radius: 8px; 
-                               background: #4CAF50; color: #fff; font-weight: bold; text-align: center;">
-                        Juz <?php echo $juz; ?>
+                <div class="juz-item <?php echo $is_completed ? 'completed' : ''; ?>" 
+                     data-quran="<?php echo $quran; ?>" 
+                     data-juz="<?php echo $juz; ?>"
+                     onclick="toggleSelection(this)">
+                    Juz <?php echo $juz; ?>
+                    <?php if ($is_completed): ?>
                         <br><i class="fas fa-check-circle"></i>
-                    </div>
-                <?php else: ?>
-                    <form method="POST" style="display: inline;">
-                        <input type="hidden" name="quran_number" value="<?php echo $quran; ?>">
-                        <input type="hidden" name="juz_number" value="<?php echo $juz; ?>">
-                        <button type="submit" 
-                                style="width: 100%; padding: 15px 5px; border: 2px solid #ddd; border-radius: 8px; 
-                                       background: #fff; color: #333; cursor: pointer; font-weight: bold; transition: all 0.3s;"
-                                onmouseover="this.style.transform='scale(1.05)'"
-                                onmouseout="this.style.transform='scale(1)'">
-                            Juz <?php echo $juz; ?>
-                        </button>
-                    </form>
-                <?php endif; ?>
+                    <?php endif; ?>
+                </div>
             <?php endfor; ?>
         </div>
     </div>
     <?php endfor; ?>
 
     <div class="card">
-        <p class="text-center" style="padding: 20px;">
-            <i class="fas fa-info-circle"></i> Click on any incomplete Juz to mark it as complete. Once marked, it cannot be unmarked.
+        <p class="text-center" style="padding: 20px; color: var(--text-secondary);">
+            <i class="fas fa-info-circle"></i> Click on multiple Juz to select them, then click the floating "Save Progress" button.
         </p>
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
+<!-- Floating Action Button -->
+<div class="floating-actions" id="floating-actions">
+    <button type="button" class="btn btn-warning btn-lg" onclick="uploadProgress()">
+        <i class="fas fa-cloud-upload-alt"></i> Save Progress (<span id="selection-count">0</span>)
+    </button>
+</div>
+
+<script>
+    let selectedJuz = [];
+
+    function toggleSelection(element) {
+        if (element.classList.contains('completed')) return;
+
+        const quran = element.getAttribute('data-quran');
+        const juz = element.getAttribute('data-juz');
+        
+        element.classList.toggle('selected');
+        
+        if (element.classList.contains('selected')) {
+            selectedJuz.push({quran_number: quran, juz_number: juz});
+        } else {
+            selectedJuz = selectedJuz.filter(item => !(item.quran_number == quran && item.juz_number == juz));
+        }
+        
+        updateFloatingButton();
+    }
+
+    function selectAll(quranNumber) {
+        const grid = document.querySelector(`#quran-card-${quranNumber} .juz-grid`);
+        const items = grid.querySelectorAll('.juz-item:not(.completed):not(.selected)');
+        
+        items.forEach(item => {
+            item.classList.add('selected');
+            selectedJuz.push({
+                quran_number: item.getAttribute('data-quran'), 
+                juz_number: item.getAttribute('data-juz')
+            });
+        });
+        
+        updateFloatingButton();
+    }
+
+    function updateFloatingButton() {
+        const btn = document.getElementById('floating-actions');
+        const countSpan = document.getElementById('selection-count');
+        
+        if (selectedJuz.length > 0) {
+            btn.style.display = 'block';
+            countSpan.innerText = selectedJuz.length;
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+
+    async function uploadProgress() {
+        if (selectedJuz.length === 0) return;
+        
+        const btn = document.querySelector('#floating-actions button');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const response = await fetch('ajax_quran_tracking.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ selections: selectedJuz })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Update UI for completed items
+                selectedJuz.forEach(item => {
+                    const el = document.querySelector(`.juz-item[data-quran="${item.quran_number}"][data-juz="${item.juz_number}"]`);
+                    el.classList.remove('selected');
+                    el.classList.add('completed');
+                    el.innerHTML = `Juz ${item.juz_number}<br><i class="fas fa-check-circle"></i>`;
+                });
+
+                // Update Progress Bars
+                updateProgressUI(result);
+
+                // Show success alert
+                showAlert('success', result.message);
+                
+                // Clear selection
+                selectedJuz = [];
+                updateFloatingButton();
+            } else {
+                showAlert('error', result.message || 'An error occurred.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('error', 'Failed to connect to the server.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    }
+
+    function updateProgressUI(result) {
+        // Update Overall
+        const overall = result.overall_progress;
+        document.getElementById('overall-label').innerText = `Total Progress: ${overall.completed_juz} / 120 Juz`;
+        document.getElementById('overall-percent').innerText = `${overall.progress_percentage}%`;
+        document.getElementById('overall-bar').style.width = `${overall.progress_percentage}%`;
+
+        // Update each Quran
+        for (const [quran, count] of Object.entries(result.quran_counts)) {
+            const percent = ((count / 30) * 100).toFixed(2);
+            document.getElementById(`quran-count-${quran}`).innerText = count;
+            document.getElementById(`quran-percent-${quran}`).innerText = percent;
+            document.getElementById(`quran-bar-${quran}`).style.width = `${percent}%`;
+        }
+    }
+
+    function showAlert(type, message) {
+        const alertDiv = document.getElementById('ajax-alert');
+        alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'error'} fade-in`;
+        alertDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+        alertDiv.style.display = 'flex';
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        setTimeout(() => {
+            alertDiv.style.display = 'none';
+        }, 5000);
+    }
+</script>
+
+<?php require_once '../includes/header.php'; ?>

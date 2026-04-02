@@ -32,47 +32,66 @@ if (!$user) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $its_number = clean_input($_POST['its_number']);
-    $tr_number = clean_input($_POST['tr_number']);
-    $category = clean_input($_POST['category']);
-    $classification = clean_input($_POST['classification']);
-    $name = clean_input($_POST['name']);
-    $email = clean_input($_POST['email']);
-    $phone_number = clean_input($_POST['phone_number']);
-    $role = clean_input($_POST['role']);
-    $admin_type = ($role === 'admin' && !empty($_POST['admin_type'])) ? clean_input($_POST['admin_type']) : null;
-
-    if (empty($its_number) || empty($name) || empty($email)) {
-        $error = 'Please fill in all required fields';
-    } else {
-        // Check if email or ITS number already exists (excluding current user)
-        $sql = "SELECT * FROM users WHERE (email = ? OR its_number = ?) AND id != ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssi", $email, $its_number, $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result->num_rows > 0) {
-            $error = 'Email or ITS number already exists for another user';
-        } else {
-            // Update user
-            $sql = "UPDATE users 
-                    SET its_number = ?, tr_number = ?, category = ?, classification = ?, 
-                        name = ?, email = ?, phone_number = ?, role = ?, admin_type = ?
-                    WHERE id = ?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sssssssssi", $its_number, $tr_number, $category, $classification, 
-                             $name, $email, $phone_number, $role, $admin_type, $user_id);
-
-            if ($stmt->execute()) {
-                $success = 'User details updated successfully!';
-                // Refresh user data
-                $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
-                $stmt->bind_param("i", $user_id);
-                $stmt->execute();
-                $user = $stmt->get_result()->fetch_assoc();
+    if (isset($_POST['reset_password'])) {
+        if (is_super_admin()) {
+            if (!empty($user['tr_number'])) {
+                $sql = "UPDATE users SET password = ? WHERE id = ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("si", $user['tr_number'], $user_id);
+                if ($stmt->execute()) {
+                    $success = 'Password reset to TR Number (' . $user['tr_number'] . ') successfully!';
+                } else {
+                    $error = 'Failed to reset password.';
+                }
             } else {
-                $error = 'Failed to update user details. Please try again.';
+                $error = 'User does not have a TR Number. Password cannot be reset to TR Number.';
+            }
+        } else {
+            $error = 'Only Super Admins can reset passwords.';
+        }
+    } else {
+        $its_number = clean_input($_POST['its_number']);
+        $tr_number = clean_input($_POST['tr_number']);
+        $category = clean_input($_POST['category']);
+        $classification = clean_input($_POST['classification']);
+        $name = clean_input($_POST['name']);
+        $email = clean_input($_POST['email']);
+        $phone_number = clean_input($_POST['phone_number']);
+        $role = clean_input($_POST['role']);
+        $admin_type = ($role === 'admin' && !empty($_POST['admin_type'])) ? clean_input($_POST['admin_type']) : null;
+
+        if (empty($its_number) || empty($name) || empty($email)) {
+            $error = 'Please fill in all required fields';
+        } else {
+            // Check if email or ITS number already exists (excluding current user)
+            $sql = "SELECT * FROM users WHERE (email = ? OR its_number = ?) AND id != ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ssi", $email, $its_number, $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $error = 'Email or ITS number already exists for another user';
+            } else {
+                // Update user
+                $sql = "UPDATE users 
+                        SET its_number = ?, tr_number = ?, category = ?, classification = ?, 
+                            name = ?, email = ?, phone_number = ?, role = ?, admin_type = ?
+                        WHERE id = ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("sssssssssi", $its_number, $tr_number, $category, $classification, 
+                                 $name, $email, $phone_number, $role, $admin_type, $user_id);
+
+                if ($stmt->execute()) {
+                    $success = 'User details updated successfully!';
+                    // Refresh user data
+                    $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+                    $stmt->bind_param("i", $user_id);
+                    $stmt->execute();
+                    $user = $stmt->get_result()->fetch_assoc();
+                } else {
+                    $error = 'Failed to update user details. Please try again.';
+                }
             }
         }
     }
@@ -184,9 +203,21 @@ require_once '../includes/header.php';
                 </select>
             </div>
 
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> <strong>Note:</strong> Password cannot be changed from this page. User can change their password from their profile page.
-            </div>
+            <?php if (is_super_admin()): ?>
+                <div class="alert alert-warning" style="margin: 20px 0; border-left: 5px solid #f59e0b;">
+                    <h4 style="margin-top: 0; color: #92400e;"><i class="fas fa-user-shield"></i> Super Admin: Password Reset</h4>
+                    <p style="margin-bottom: 15px;">You can reset this user's password to their <strong>TR Number (<?php echo htmlspecialchars($user['tr_number'] ?: 'Not Set'); ?>)</strong> if they have forgotten it.</p>
+                    <form method="POST" action="" onsubmit="return confirm('Are you sure you want to reset the password to the TR Number?');">
+                        <button type="submit" name="reset_password" class="btn btn-warning" <?php echo empty($user['tr_number']) ? 'disabled' : ''; ?>>
+                            <i class="fas fa-sync-alt"></i> Reset Password to TR Number
+                        </button>
+                    </form>
+                </div>
+            <?php else: ?>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> <strong>Note:</strong> Password cannot be changed from this page. User can change their password from their profile page.
+                </div>
+            <?php endif; ?>
 
             <div class="action-buttons">
                 <button type="submit" class="btn btn-primary">
