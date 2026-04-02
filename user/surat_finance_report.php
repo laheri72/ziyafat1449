@@ -157,37 +157,36 @@ require_once '../includes/header.php';
         </div>
         <div class="table-container">
             <?php if ($transactions->num_rows > 0): ?>
-                <table>
+                <table class="responsive-table-stack">
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Amount (INR)</th>
-                            <th>Amount (USD)</th>
-                            <th>Payment Year</th>
-                            <th>Payment Method</th>
+                            <th>INR Amount</th>
+                            <th>USD Amount</th>
+                            <th>Target Year</th>
+                            <th>Method</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php 
                         while ($transaction = $transactions->fetch_assoc()): 
-                            // Get payment year label based on payment date
                             $year_label = get_payment_year_from_date($transaction['payment_date']);
                         ?>
                             <tr>
-                                <td><?php echo date('M d, Y', strtotime($transaction['payment_date'])); ?></td>
-                                <td><?php echo format_currency($transaction['amount_inr'], 'INR'); ?></td>
-                                <td><?php echo format_currency($transaction['amount_usd']); ?></td>
-                                <td>
+                                <td data-label="Date"><?php echo date('M d, Y', strtotime($transaction['payment_date'])); ?></td>
+                                <td data-label="INR"><?php echo format_currency($transaction['amount_inr'], 'INR'); ?></td>
+                                <td data-label="USD"><?php echo format_currency($transaction['amount_usd']); ?></td>
+                                <td data-label="Target">
                                     <span class="badge badge-primary">
                                         <?php echo $year_label; ?>
                                     </span>
                                 </td>
-                                <td><?php echo htmlspecialchars($transaction['payment_method']); ?></td>
+                                <td data-label="Method"><?php echo htmlspecialchars($transaction['payment_method']); ?></td>
                             </tr>
                         <?php endwhile; ?>
                     </tbody>
                 </table>
-            <?php else: ?>
+<?php else: ?>
                 <p class="text-center">No transactions found.</p>
             <?php endif; ?>
         </div>

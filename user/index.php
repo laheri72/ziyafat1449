@@ -53,21 +53,28 @@ require_once '../includes/header.php';
         <div class="card-header">
             <h3><i class="fas fa-compass"></i> Quick Navigation</h3>
         </div>
-        <div class="action-buttons">
-            <a href="quran_tracking.php" class="btn btn-primary">
-                <i class="fas fa-quran"></i> Tilawat ul Quran Hifzan
-            </a>
-            <a href="dua_tracking.php" class="btn btn-success">
-                <i class="fas fa-hands-praying"></i> Dua Tracking
-            </a>
-            <a href="book_transcription.php" class="btn btn-warning">
-                <i class="fas fa-book"></i> Istinsakh Ul Kutub
-            </a>
-            <a href="amali_janib.php" class="btn btn-secondary">
-                <i class="fas fa-chart-line"></i> View Full Dashboard
-            </a>
+        <div style="padding: var(--spacing-xl);">
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 0;">
+                <a href="quran_tracking.php" class="btn btn-primary" style="flex-direction: column; padding: 1.5rem 1rem; gap: 10px;">
+                    <i class="fas fa-quran" style="font-size: 1.5rem;"></i>
+                    <span>Quran Hifzan</span>
+                </a>
+                <a href="dua_tracking.php" class="btn btn-success" style="flex-direction: column; padding: 1.5rem 1rem; gap: 10px;">
+                    <i class="fas fa-hands-praying" style="font-size: 1.5rem;"></i>
+                    <span>Dua Tracking</span>
+                </a>
+                <a href="book_transcription.php" class="btn btn-warning" style="flex-direction: column; padding: 1.5rem 1rem; gap: 10px;">
+                    <i class="fas fa-book" style="font-size: 1.5rem;"></i>
+                    <span>Istinsakh Kutub</span>
+                </a>
+                <a href="amali_janib.php" class="btn btn-secondary" style="flex-direction: column; padding: 1.5rem 1rem; gap: 10px;">
+                    <i class="fas fa-chart-line" style="font-size: 1.5rem;"></i>
+                    <span>Full Dashboard</span>
+                </a>
+            </div>
         </div>
     </div>
+
 
     <!-- Stats Grid -->
     <div class="stats-grid">

@@ -71,6 +71,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Sidebar toggle functionality
+function initSidebar() {
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const html = document.documentElement;
+
+    if (menuToggle && sidebar && sidebarOverlay) {
+        menuToggle.addEventListener('click', function() {
+            if (window.innerWidth <= 1024) {
+                // Mobile: Toggle slide-in
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+            } else {
+                // Desktop: Toggle collapse
+                sidebar.classList.toggle('collapsed');
+                // Remove the helper class once user interacts
+                html.classList.remove('sidebar-is-collapsed');
+                
+                if (sidebar.classList.contains('collapsed')) {
+                    localStorage.setItem('sidebarState', 'collapsed');
+                } else {
+                    localStorage.setItem('sidebarState', 'expanded');
+                }
+            }
+        });
+
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+        });
+    }
+}
+
 // Table search functionality
 function searchTable(inputId, tableId) {
     const input = document.getElementById(inputId);

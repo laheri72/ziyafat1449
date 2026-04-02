@@ -100,7 +100,7 @@ require_once '../includes/header.php';
 
         <div class="table-container">
             <?php if ($users->num_rows > 0): ?>
-                <table id="dataTable">
+                <table id="dataTable" class="responsive-table-stack">
                     <thead>
                         <tr>
                             <th>ITS Number</th>
@@ -110,9 +110,9 @@ require_once '../includes/header.php';
                             <th>Email</th>
                             <th>Phone</th>
                             <th>Role</th>
-                            <th>Total Contributed (USD)</th>
-                            <th>Total Contributed (INR)</th>
-                            <th>Remaining (USD)</th>
+                            <th>Total (USD)</th>
+                            <th>Total (INR)</th>
+                            <th>Remaining</th>
                             <th>Progress</th>
                             <th>Joined</th>
                             <th>Actions</th>
@@ -125,38 +125,38 @@ require_once '../includes/header.php';
                             $progress = calculate_percentage($user['total_contributed_usd'], $settings['target_amount_usd']);
                         ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($user['its_number']); ?></td>
-                                <td><?php echo htmlspecialchars($user['tr_number']); ?></td>
-                                <td>
+                                <td data-label="ITS"><?php echo htmlspecialchars($user['its_number']); ?></td>
+                                <td data-label="TR"><?php echo htmlspecialchars($user['tr_number']); ?></td>
+                                <td data-label="Jamea">
                                     <?php if ($user['category']): ?>
                                         <span class="badge badge-secondary"><?php echo htmlspecialchars($user['category']); ?></span>
                                     <?php else: ?>
                                         <span style="color: #999;">-</span>
                                     <?php endif; ?>
                                 </td>
-                                <td><?php echo htmlspecialchars($user['name']); ?></td>
-                                <td><?php echo htmlspecialchars($user['email']); ?></td>
-                                <td><?php echo htmlspecialchars($user['phone_number'] ?: '-'); ?></td>
-                                <td>
+                                <td data-label="Name"><strong><?php echo htmlspecialchars($user['name']); ?></strong></td>
+                                <td data-label="Email"><?php echo htmlspecialchars($user['email']); ?></td>
+                                <td data-label="Phone"><?php echo htmlspecialchars($user['phone_number'] ?: '-'); ?></td>
+                                <td data-label="Role">
                                     <span class="badge <?php echo $user['role'] === 'admin' ? 'badge-danger' : 'badge-primary'; ?>">
                                         <?php echo ucfirst($user['role']); ?>
                                     </span>
                                 </td>
-                                <td><?php echo format_currency($user['total_contributed_usd']); ?></td>
-                                <td><?php echo format_currency($user['total_contributed_inr'], 'INR'); ?></td>
-                                <td>
+                                <td data-label="USD"><?php echo format_currency($user['total_contributed_usd']); ?></td>
+                                <td data-label="INR"><?php echo format_currency($user['total_contributed_inr'], 'INR'); ?></td>
+                                <td data-label="Rem.">
                                     <div><?php echo format_currency($remaining_usd); ?></div>
                                     <small style="color: #6b7280;"><?php echo format_currency($remaining_inr, 'INR'); ?></small>
                                 </td>
-                                <td>
+                                <td data-label="Progress">
                                     <div class="progress-bar" style="height: 20px; width: 100px;">
                                         <div class="progress-fill" style="width: <?php echo $progress; ?>%; font-size: 0.7rem;">
                                             <?php echo $progress; ?>%
                                         </div>
                                     </div>
                                 </td>
-                                <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
-                                <td>
+                                <td data-label="Joined"><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
+                                <td data-label="Actions">
                                     <div class="action-buttons">
                                         <a href="user_details.php?id=<?php echo $user['id']; ?>" class="btn btn-primary btn-sm">
                                             <i class="fas fa-eye"></i>

@@ -8,39 +8,9 @@ $page_title = 'Add Contribution';
 $css_path = '../assets/css/';
 $js_path = '../assets/js/';
 
-$error = '';
-$success = '';
-
 // Get all users
 $sql = "SELECT id, its_number, tr_number, name FROM users WHERE role = 'user' ORDER BY tr_number ASC";
 $users = $conn->query($sql);
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $user_id = clean_input($_POST['user_id']);
-    $amount_usd = clean_input($_POST['amount_usd']);
-    $amount_inr = clean_input($_POST['amount_inr']);
-    $payment_year = clean_input($_POST['payment_year']);
-    $payment_date = clean_input($_POST['payment_date']);
-    $payment_method = clean_input($_POST['payment_method']);
-    $transaction_reference = clean_input($_POST['transaction_reference']);
-    $notes = clean_input($_POST['notes']);
-
-    if (empty($user_id) || empty($amount_usd) || empty($payment_year) || empty($payment_date)) {
-        $error = 'Please fill in all required fields';
-    } else {
-        // Insert contribution
-        $sql = "INSERT INTO contributions (user_id, amount_usd, amount_inr, payment_year, payment_date, payment_method, transaction_reference, notes, created_by) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("iddsssssi", $user_id, $amount_usd, $amount_inr, $payment_year, $payment_date, $payment_method, $transaction_reference, $notes, $_SESSION['user_id']);
-
-        if ($stmt->execute()) {
-            $success = 'Contribution added successfully!';
-        } else {
-            $error = 'Failed to add contribution. Please try again.';
-        }
-    }
-}
 
 require_once '../includes/header.php';
 ?>
@@ -48,16 +18,8 @@ require_once '../includes/header.php';
 <div class="container">
     <h1 class="mb-3"><i class="fas fa-plus"></i> Add Contribution</h1>
 
-    <?php if ($error): ?>
-        <div class="alert alert-error"><?php echo $error; ?></div>
-    <?php endif; ?>
-
-    <?php if ($success): ?>
-        <div class="alert alert-success"><?php echo $success; ?></div>
-    <?php endif; ?>
-
     <div class="card">
-        <form method="POST" action="">
+        <form id="addContributionForm">
             <div class="form-group">
                 <label for="user_id"><i class="fas fa-user"></i> Select User *</label>
                 <select id="user_id" name="user_id" class="form-control select2-user" required>
@@ -70,16 +32,18 @@ require_once '../includes/header.php';
                 </select>
             </div>
 
-            <div class="form-group">
-                <label for="amount_usd"><i class="fas fa-dollar-sign"></i> Amount (USD) *</label>
-                <input type="number" id="amount_usd" name="amount_usd" class="form-control" step="0.01" min="0" required>
-            </div>
+            <div class="stats-grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label for="amount_usd"><i class="fas fa-dollar-sign"></i> Amount (USD) *</label>
+                    <input type="number" id="amount_usd" name="amount_usd" class="form-control" step="0.01" min="0" required>
+                </div>
 
-            <div class="form-group">
-                <label for="amount_inr"><i class="fas fa-rupee-sign"></i> Amount (INR) *</label>
-                <input type="number" id="amount_inr" name="amount_inr" class="form-control" step="0.01" min="0" required>
-                <small>Auto-converts based on exchange rate (1 USD = 84.67 INR)</small>
+                <div class="form-group">
+                    <label for="amount_inr"><i class="fas fa-rupee-sign"></i> Amount (INR) *</label>
+                    <input type="number" id="amount_inr" name="amount_inr" class="form-control" step="0.01" min="0" required>
+                </div>
             </div>
+            <small style="display: block; margin-top: -10px; margin-bottom: 15px; color: var(--text-secondary);">Rate: 1 USD = 84.67 INR (Auto-converts)</small>
 
             <div class="form-group">
                 <label for="payment_year"><i class="fas fa-calendar"></i> Payment Year *</label>
@@ -93,23 +57,24 @@ require_once '../includes/header.php';
                 </select>
             </div>
 
-            <div class="form-group">
-                <label for="payment_date"><i class="fas fa-calendar-day"></i> Payment Date *</label>
-                <input type="date" id="payment_date" name="payment_date" class="form-control" value="<?php echo date('Y-m-d'); ?>" required>
-            </div>
+            <div class="stats-grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label for="payment_date"><i class="fas fa-calendar-day"></i> Payment Date *</label>
+                    <input type="date" id="payment_date" name="payment_date" class="form-control" value="<?php echo date('Y-m-d'); ?>" required>
+                </div>
 
-            <div class="form-group">
-                <label for="payment_method"><i class="fas fa-credit-card"></i> Payment Method</label>
-                <select id="payment_method" name="payment_method" class="form-control">
-                    <option value="">-- Select Method --</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="UPI">UPI</option>
-                    <option value="Cheque">Cheque</option>
-                    <option value="Credit Card">Credit Card</option>
-                    <option value="Debit Card">Debit Card</option>
-                    <option value="Other">Other</option>
-                </select>
+                <div class="form-group">
+                    <label for="payment_method"><i class="fas fa-credit-card"></i> Method</label>
+                    <select id="payment_method" name="payment_method" class="form-control">
+                        <option value="">-- Select --</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Cheque">Cheque</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
             </div>
 
             <div class="form-group">
@@ -119,12 +84,12 @@ require_once '../includes/header.php';
 
             <div class="form-group">
                 <label for="notes"><i class="fas fa-sticky-note"></i> Notes</label>
-                <textarea id="notes" name="notes" class="form-control" rows="3"></textarea>
+                <textarea id="notes" name="notes" class="form-control" rows="2"></textarea>
             </div>
 
             <div class="action-buttons">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Add Contribution
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="fas fa-save"></i> Save Contribution
                 </button>
                 <a href="index.php" class="btn btn-secondary">
                     <i class="fas fa-times"></i> Cancel
@@ -138,48 +103,76 @@ require_once '../includes/header.php';
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
     .select2-container--default .select2-selection--single {
-        height: 38px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
+        height: 45px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
     }
     .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 36px;
         padding-left: 12px;
+        color: var(--text-primary);
     }
     .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 36px;
-    }
-    .select2-container {
-        width: 100% !important;
+        height: 43px;
     }
 </style>
 
-<!-- Select2 JS -->
+<!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
 $(document).ready(function() {
-    // Initialize Select2 for user selection with search in dropdown
     $('.select2-user').select2({
         placeholder: '-- Select User --',
-        allowClear: true,
-        width: '100%',
-        dropdownAutoWidth: true,
-        minimumResultsForSearch: 0, // Always show search box
-        matcher: function(params, data) {
-            // If there are no search terms, return all data
-            if ($.trim(params.term) === '') {
-                return data;
-            }
+        width: '100%'
+    });
 
-            // Search in the text (which contains TR, name, and ITS)
-            if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) {
-                return data;
-            }
+    const amountUSD = document.getElementById('amount_usd');
+    const amountINR = document.getElementById('amount_inr');
+    const exchangeRate = 84.67;
 
-            // Return null if no match
-            return null;
+    amountUSD.addEventListener('input', function() {
+        if (this.value) {
+            amountINR.value = (parseFloat(this.value) * exchangeRate).toFixed(2);
+        }
+    });
+
+    amountINR.addEventListener('input', function() {
+        if (this.value) {
+            amountUSD.value = (parseFloat(this.value) / exchangeRate).toFixed(2);
+        }
+    });
+
+    document.getElementById('addContributionForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const formData = new FormData(this);
+            const response = await fetch('ajax_add_contribution.php', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(result.message, 'success');
+                this.reset();
+                $('.select2-user').val(null).trigger('change');
+            } else {
+                showToast(result.message, 'error');
+            }
+        } catch (error) {
+            showToast('Connection error', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
         }
     });
 });

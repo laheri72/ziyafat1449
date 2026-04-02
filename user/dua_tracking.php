@@ -308,7 +308,7 @@ document.querySelectorAll('.tracking-form').forEach(form => {
             submitBtn.disabled = false;
             
             if (data.success) {
-                // Show success message
+                // Show success message using global system
                 showToast(data.message, 'success');
                 
                 // Update progress bar and counts
@@ -323,25 +323,23 @@ document.querySelectorAll('.tracking-form').forEach(form => {
                     progressBar.style.width = Math.min(data.data.progress_percentage, 100) + '%';
                     progressText.textContent = `Total: ${data.data.completed_count} / ${data.data.target_count}`;
                     progressValue.textContent = data.data.progress_percentage + '%';
-                    countHelper.textContent = `This will be added to your current total of ${data.data.completed_count}`;
+                    
+                    if (countHelper) {
+                        countHelper.textContent = `This will be added to your current total of ${data.data.completed_count}`;
+                    }
                 }
                 
                 // Reset form
                 this.reset();
-                this.querySelector('input[name="entry_date"]').value = new Date().toISOString().split('T')[0];
             } else {
                 // Show error message
                 showToast(data.message, 'error');
             }
         })
         .catch(error => {
-            // Remove loading state
             submitBtn.classList.remove('btn-loading');
             submitBtn.disabled = false;
-            
-            // Show error message
             showToast('An error occurred. Please try again.', 'error');
-            console.error('Error:', error);
         });
     });
 });

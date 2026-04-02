@@ -11,6 +11,15 @@ init_session();
     <title><?php echo isset($page_title) ? $page_title . ' - ' : ''; ?>Ziyafat us Shukr</title>
     <link rel="stylesheet" href="<?php echo isset($css_path) ? $css_path : '../assets/css/'; ?>style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // Check sidebar state before page renders to prevent flicker
+        (function() {
+            const sidebarState = localStorage.getItem('sidebarState');
+            if (sidebarState === 'collapsed' && window.innerWidth > 1024) {
+                document.documentElement.classList.add('sidebar-is-collapsed');
+            }
+        })();
+    </script>
 </head>
 
 <body>
@@ -18,6 +27,11 @@ init_session();
         <div class="app-layout">
             <!-- Sidebar -->
             <aside class="sidebar" id="sidebar">
+                <script>
+                    if (localStorage.getItem('sidebarState') === 'collapsed' && window.innerWidth > 1024) {
+                        document.getElementById('sidebar').classList.add('collapsed');
+                    }
+                </script>
                 <div class="sidebar-header">
                     <div class="sidebar-brand">
                         <div class="sidebar-brand-logo" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; background-color: BLUE; color: white; border-radius: 8px;">
@@ -185,6 +199,9 @@ init_session();
             <!-- Sidebar Overlay for Mobile -->
             <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+            <!-- Toast Container -->
+            <div id="toast-container" class="toast-container"></div>
+
             <!-- Main Wrapper -->
             <div class="main-wrapper">
                 <!-- Topbar -->
@@ -218,6 +235,40 @@ init_session();
 
                 <!-- Main Content -->
                 <main class="main-content">
-                <?php else: ?>
-                    <!-- Login page layout (no sidebar) -->
-                <?php endif; ?>
+                <script>
+                    /**
+                     * Global Toast Notification System
+                     * @param {string} message 
+                     * @param {string} type - 'success', 'error', 'warning', 'info'
+                     */
+                    function showToast(message, type = 'info') {
+                        const container = document.getElementById('toast-container');
+                        if (!container) return;
+                        
+                        const toast = document.createElement('div');
+                        toast.className = `toast-item ${type}`;
+                        
+                        let icon = 'info-circle';
+                        if (type === 'success') icon = 'check-circle';
+                        if (type === 'error') icon = 'exclamation-circle';
+                        if (type === 'warning') icon = 'exclamation-triangle';
+
+                        toast.innerHTML = `
+                            <i class="fas fa-${icon}"></i>
+                            <div class="toast-message">${message}</div>
+                        `;
+                        
+                        container.appendChild(toast);
+                        
+                        // Auto remove after 4 seconds
+                        setTimeout(() => {
+                            toast.style.opacity = '0';
+                            toast.style.transform = 'translateX(100%)';
+                            toast.style.transition = 'all 0.5s ease';
+                            setTimeout(() => toast.remove(), 500);
+                        }, 4000);
+                    }
+                </script>
+    <?php else: ?>
+        <!-- Login page layout (no sidebar) -->
+    <?php endif; ?>
