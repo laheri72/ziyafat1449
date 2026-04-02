@@ -49,7 +49,12 @@ while ($user = $users_result->fetch_assoc()) {
                          WHERE dm.is_active = 1 GROUP BY dm.category");
     while($row = $res->fetch_assoc()) { $dua_summary[$row['category']] = $row['count']; }
     
-    $books = get_book_progress($conn, $userId);
+    $books_res = get_book_progress($conn, $userId);
+    $books = ['completed' => 0, 'in_progress' => 0];
+    while($b_row = $books_res->fetch_assoc()) {
+        if ($b_row['status'] === 'completed') $books['completed']++;
+        else $books['in_progress']++;
+    }
     $finance = get_user_contributions($conn, $userId);
 
     // 2. Get Category Insights (Averages)
@@ -103,12 +108,15 @@ while ($user = $users_result->fetch_assoc()) {
     $body = get_email_template("Your Progress Update", $content, $userName);
 
     // 4. Send Email
-    if (send_email($email, $subject, $body)) {
-        echo "Email sent successfully to $email.\n";
+    $result = send_email($email, $subject, $body);
+
+    if ($result) {
+        echo "MAIL SENT to $email\n";
         // Update last sent timestamp
         $conn->query("UPDATE users SET last_reminder_sent = NOW() WHERE id = $userId");
     } else {
-        echo "Failed to send email to $email.\n";
+        echo "MAIL FAILED to $email\n";
+        // Check if there's a more detailed error log in the PHP error logs
     }
 }
 
