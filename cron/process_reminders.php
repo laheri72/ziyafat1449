@@ -13,9 +13,13 @@ set_time_limit(0);
 
 echo "Starting reminder process at " . date('Y-m-d H:i:s') . "\n";
 
-// Criteria: 
-// 1. Last reminder sent > 14 days ago
-// 2. OR Last active > 15 days ago (and hasn't received a reminder in at least 7 days to avoid double-firing)
+/**
+ * STRATEGY TO AVOID RATE LIMITS:
+ * 1. Small batch size (Limit 5)
+ * 2. Delay between sends (5 seconds)
+ * 3. Rotate through users fairly (ORDER BY last_reminder_sent ASC)
+ */
+
 $sql = "SELECT * FROM users 
         WHERE role = 'user' 
         AND (
@@ -23,7 +27,8 @@ $sql = "SELECT * FROM users
             OR DATEDIFF(NOW(), last_reminder_sent) >= 14 
             OR (DATEDIFF(NOW(), last_active) >= 15 AND DATEDIFF(NOW(), last_reminder_sent) >= 7)
         )
-        LIMIT 50"; // Process in batches to avoid server load
+        ORDER BY last_reminder_sent ASC 
+        LIMIT 5"; 
 
 $users_result = $conn->query($sql);
 
@@ -38,7 +43,7 @@ while ($user = $users_result->fetch_assoc()) {
     $userName = $user['name'];
     $email = $user['email'];
 
-    echo "Processing $userName ($email)...\n";
+    echo "Processing $userName ($email)... ";
 
     // 1. Get User Progress
     $quran = get_quran_progress($conn, $userId);
@@ -111,14 +116,16 @@ while ($user = $users_result->fetch_assoc()) {
     $result = send_email($email, $subject, $body);
 
     if ($result) {
-        echo "MAIL SENT to $email\n";
+        echo "MAIL SENT\n";
         // Update last sent timestamp
         $conn->query("UPDATE users SET last_reminder_sent = NOW() WHERE id = $userId");
     } else {
-        echo "MAIL FAILED to $email\n";
-        // Check if there's a more detailed error log in the PHP error logs
+        echo "MAIL FAILED\n";
     }
+
+    // Small delay to prevent SMTP throttling
+    sleep(5);
 }
 
-echo "Reminder process finished.\n";
+echo "Reminder process finished at " . date('Y-m-d H:i:s') . ".\n";
 ?>
