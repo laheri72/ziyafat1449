@@ -6,16 +6,6 @@ function init_session() {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-    
-    // Update last_active timestamp for logged in users
-    if (isset($_SESSION['user_id']) && !isset($GLOBALS['last_active_updated'])) {
-        global $conn;
-        if ($conn) {
-            $uid = $_SESSION['user_id'];
-            $conn->query("UPDATE users SET last_active = NOW() WHERE id = $uid");
-            $GLOBALS['last_active_updated'] = true; // Avoid multiple updates per request
-        }
-    }
 }
 
 // Check if user is logged in

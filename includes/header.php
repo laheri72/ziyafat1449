@@ -57,6 +57,15 @@ init_session();
                                 </a>
                             </div>
 
+                            <?php if (is_super_admin()): ?>
+                            <div class="nav-item">
+                                <a href="../admin/broadcast_center.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'broadcast_center.php' ? 'active' : ''; ?>">
+                                    <i class="fas fa-bullhorn"></i>
+                                    <span>Broadcast Center</span>
+                                </a>
+                            </div>
+                            <?php endif; ?>
+
                             <!-- User Portal Access for Admin -->
                             <div class="nav-item">
                                 <a href="../user/index.php" class="nav-link <?php echo strpos($_SERVER['PHP_SELF'], 'user/index.php') !== false ? 'active' : ''; ?>">

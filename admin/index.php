@@ -282,6 +282,11 @@ require_once '../includes/header.php';
                 <a href="reports.php" class="btn btn-warning">
                     <i class="fas fa-chart-bar"></i> View Reports
                 </a>
+                <?php if (is_super_admin()): ?>
+                <a href="broadcast_center.php" class="btn btn-purple" style="background-color: #8b5cf6; color: white;">
+                    <i class="fas fa-bullhorn"></i> Broadcast Center
+                </a>
+                <?php endif; ?>
             </div>
         </div>
 
