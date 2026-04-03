@@ -1,19 +1,17 @@
 # Improvement Opportunities
 
-## Technical Debt
-- **Password Hashing:** Implement secure hashing immediately.
-- **Environment Configuration:** Move hardcoded credentials and constants (like exchange rates and targets) to a `.env` file or a `settings` table in the DB.
-- **Code Duplication:** Several pages (e.g., the different category reports) likely share similar logic that could be abstracted into classes or shared functions.
-- **Modernization:** Consider migrating from procedural `mysqli` to PDO for better abstraction and security.
-- **Frontend Assets:** Use a proper build tool (like Vite) for JS/CSS if the complexity grows, rather than including scripts directly.
+## Completed ✅
+- **Real-time Feedback:** Site-wide implementation of AJAX/Fetch for all tracking and data entry.
+- **Mobile Optimization:** Fully responsive navigation and table structures.
+- **Email Notifications:** Implemented Super Admin Broadcast Center for personalized reminders.
+- **Admin Utilities:** Added Super Admin password reset functionality.
 
-## UI/UX Enhancements
-- **Interactive Reports:** Use a charting library (like Chart.js or ApexCharts) for more visual representations of spiritual and financial progress.
-- **Mobile Optimization:** Ensure all tracking pages are fully responsive for users logging data on the go.
-- **Real-time Feedback:** Use more AJAX/Fetch for form submissions to avoid full page reloads.
+## Technical Debt (High Priority)
+- **Password Hashing:** **CRITICAL.** Implement `password_hash()` immediately to replace plain-text storage.
+- **Environment Configuration:** Move SMTP and Database credentials to a `.env` file.
+- **Code Duplication:** Refactor repeated AJAX handling patterns into a shared controller or class.
 
-## Feature Ideas
-- **Email Notifications:** Send automated receipts for contributions or weekly spiritual progress summaries.
-- **Bulk Import/Export:** Allow admins to import user data or contribution lists via CSV/Excel.
-- **Goal Setting:** Let users set personal targets for spiritual activities.
-- **Audit Logs:** Implement a more robust `activity_log` for admin actions (who edited which contribution and when).
+## Future Enhancements
+- **Automated SMTP Bounce Handling:** Logic to automatically mark emails as "Invalid" in the `users` table if they bounce multiple times.
+- **Interactive Charts:** Use Chart.js for the visual "Waterfall" and Amali progress on the dashboard.
+- **Activity Log:** Expand `mail_sent_logs` into a general `admin_audit_log` for tracking all sensitive changes.

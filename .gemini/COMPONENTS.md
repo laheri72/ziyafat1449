@@ -2,26 +2,23 @@
 
 ## UI Components
 - **`includes/header.php`:**
-  - Standard HTML head with meta tags and CSS links.
-  - Navigation bar (dynamic based on role).
-  - Profile dropdown.
-- **`includes/footer.php`:**
-  - Closing body/html tags.
-  - Standard JS links (jQuery, FontAwesome).
-  - Copyright and footer links.
-- **`user/partials/tracking_card.php`:**
-  - Reusable visual card for the user dashboard to show metrics like "Quran Progress" or "Dua Count".
+  - Dynamic Navigation based on role.
+  - **Collapsible Sidebar:** Optimized for both mobile (slide-in) and desktop (mini-mode).
+  - **Toast System:** Global `showToast(message, type)` function for real-time feedback.
+- **`includes/footer.php`:** Closing body/html and centralized JS loading.
+- **`assets/css/style.css`:**
+  - **Responsive Table Stack:** Utility classes to handle complex tables on small screens.
+  - Modern card layouts and progress bar styling.
 
-## Core Logic (`includes/functions.php`)
-This file is the engine of the application, containing:
-- **Session Helpers:** `init_session()`, `is_logged_in()`, `is_admin()`.
-- **Security Helpers:** `clean_input()`, `generate_csrf_token()`, `verify_csrf_token()`.
-- **Data Distribution:** `get_user_contributions()` implements the **Waterfall Logic** for finance.
-- **Activity Tracking:** `get_quran_progress()`, `get_dua_progress()`, `get_book_progress()`.
-- **Aggregation:** `get_amali_summary()` provides a unified view of all spiritual metrics.
-- **Formatting:** `format_currency()`, `calculate_percentage()`.
+## Core Logic
+- **`includes/functions.php`:**
+  - Session management and role-based authorization.
+  - Data distribution logic (Waterfall Finance).
+  - Centralized Amali progress calculations.
+- **`includes/mailer_helper.php`:**
+  - **`send_email($to, $subject, $body)`:** PHPMailer SMTP wrapper.
+  - **`get_email_template($title, $content, $userName)`:** Responsive HTML email wrapper.
 
-## Assets
-- **`assets/css/style.css`:** Main application styling.
-- **`assets/css/login.css`:** Specialized styling for the auth pages.
-- **`assets/js/script.js`:** General interactivity and AJAX handlers.
+## Automation & Batching
+- **Broadcast Engine:** Handles batching logic (Limit 100/day) and prevents SMTP throttling with delays.
+- **AJAX Handlers:** Decoupled frontend/backend logic for Quran, Book, and Finance entry.

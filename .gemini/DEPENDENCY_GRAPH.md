@@ -1,20 +1,17 @@
 # Dependency Graph
 
-## Server-Side (PHP)
-- **mysqli:** Standard PHP extension for database interaction.
-- **session:** Core PHP session management.
-- **datetime:** For fiscal year and payment period calculations.
+## Server-Side
+- **mysqli:** Core database extension.
+- **PHPMailer:** Located in `includes/PHPMailer/`. Handles SMTP communication.
+- **datetime:** Used for fiscal year and payment period calculations.
 
-## Client-Side (Frontend)
-- **FontAwesome 6.5.0:** Iconography (CDN).
-- **Google Fonts (Inter):** Typography (CDN).
-- **jQuery:** (Likely used for legacy AJAX or DOM manipulation).
+## Client-Side
+- **FontAwesome 6.4.0:** Icons (CDN).
+- **Inter Font:** Typography (Google Fonts).
+- **Select2:** Used for searchable user dropdowns in Admin (CDN).
+- **SweetAlert2:** Used for confirmation dialogs (CDN).
 
-## Internal Dependencies
-- `includes/functions.php` -> Used by almost all pages.
-- `config/database.php` -> Required by `includes/functions.php` or directly by pages.
-- `includes/header.php` / `includes/footer.php` -> UI wrapper for all pages.
-
-## Data Flow Dependencies
-- **Reports** -> Depend on `contributions`, `users`, `dua_entries`, `quran_progress`, and `book_transcription`.
-- **User Dashboard** -> Depends on `users`, `contributions`, and aggregated Amali data from `includes/functions.php`.
+## Internal Flow
+- `includes/functions.php` -> Essential for every page (Auth & Progress).
+- `includes/mailer_helper.php` -> Required by `ajax_broadcast.php` and debug scripts.
+- `assets/js/script.js` -> Centralized sidebar and UI initialization.
