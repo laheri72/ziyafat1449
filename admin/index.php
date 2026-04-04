@@ -47,7 +47,90 @@ if ($is_finance_admin) {
 
 // Amali-related data (only for amali coordinators)
 if ($is_amali_admin) {
-    // ... (rest of amali stats logic)
+    $is_category_coordinator = is_category_amali_coordinator();
+    $assigned_category = get_assigned_category();
+    
+    $where_sql = " WHERE role = 'user'";
+    $where_sql_alias = " WHERE u.role = 'user'";
+    $params = [];
+    if ($is_category_coordinator && $assigned_category) {
+        $where_sql .= " AND category = ?";
+        $where_sql_alias .= " AND u.category = ?";
+        $params[] = $assigned_category;
+    }
+    
+    // Get total users for this coordinator
+    $sql_total = "SELECT COUNT(*) as total FROM users" . $where_sql;
+    if (!empty($params)) {
+        $stmt = $conn->prepare($sql_total);
+        $stmt->bind_param("s", $params[0]);
+        $stmt->execute();
+        $total_users = $stmt->get_result()->fetch_assoc()['total'];
+    } else {
+        $total_users = $conn->query($sql_total)->fetch_assoc()['total'];
+    }
+    
+    // Get Quran and Juz stats
+    $sql_amali = "SELECT 
+                    COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) as total_juz_completed,
+                    FLOOR(COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) / 30) as total_qurans_completed
+                FROM users u
+                LEFT JOIN quran_progress qp ON u.id = qp.user_id" . $where_sql_alias;
+    
+    if ($is_category_coordinator && $assigned_category) {
+        $stmt = $conn->prepare($sql_amali);
+        $stmt->bind_param("s", $assigned_category);
+        $stmt->execute();
+        $amali_stats = $stmt->get_result()->fetch_assoc();
+    } else {
+        $amali_stats = $conn->query($sql_amali)->fetch_assoc();
+    }
+    
+    // Get Dua, Tasbeeh, Namaz stats
+    $sql_categories = "SELECT 
+                        dm.category,
+                        COALESCE(SUM(de.count_added), 0) as total_count
+                    FROM duas_master dm
+                    LEFT JOIN dua_entries de ON dm.id = de.dua_id
+                    LEFT JOIN users u ON de.user_id = u.id" . $where_sql_alias . 
+                    " GROUP BY dm.category";
+    
+    if ($is_category_coordinator && $assigned_category) {
+        $stmt = $conn->prepare($sql_categories);
+        $stmt->bind_param("s", $assigned_category);
+        $stmt->execute();
+        $cat_res = $stmt->get_result();
+    } else {
+        $cat_res = $conn->query($sql_categories);
+    }
+    
+    $category_stats = ['dua' => 0, 'tasbeeh' => 0, 'namaz' => 0];
+    while ($row = $cat_res->fetch_assoc()) {
+        $category_stats[$row['category']] = $row['total_count'];
+    }
+    
+    // Get Books stats
+    $sql_books = "SELECT 
+                    COUNT(DISTINCT CASE WHEN bt.status = 'completed' THEN CONCAT(bt.user_id, '-', bt.book_id) END) as total_completed,
+                    COUNT(DISTINCT CASE WHEN bt.status = 'selected' THEN CONCAT(bt.user_id, '-', bt.book_id) END) as total_in_progress
+                  FROM users u
+                  JOIN book_transcription bt ON u.id = bt.user_id" . $where_sql_alias;
+    
+    if ($is_category_coordinator && $assigned_category) {
+        $stmt = $conn->prepare($sql_books);
+        $stmt->bind_param("s", $assigned_category);
+        $stmt->execute();
+        $books_stats = $stmt->get_result()->fetch_assoc();
+    } else {
+        $books_stats = $conn->query($sql_books)->fetch_assoc();
+    }
+    
+    // Targets
+    $target_qurans = $total_users * 4;
+    $target_juz = $total_users * 120;
+    
+    $quran_progress = $target_qurans > 0 ? round(($amali_stats['total_qurans_completed'] / $target_qurans) * 100, 2) : 0;
+    $juz_progress = $target_juz > 0 ? round(($amali_stats['total_juz_completed'] / $target_juz) * 100, 2) : 0;
 }
 
 // Password Reset logic for Super Admin
