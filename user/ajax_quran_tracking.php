@@ -12,7 +12,14 @@ if (!is_logged_in()) {
     exit();
 }
 
+// Get input first to check for target_user_id
+$data = json_decode(file_get_contents('php://input'), true);
+
 $user_id = $_SESSION['user_id'];
+// Allow amali admins to submit on behalf of users
+if (isset($data['target_user_id']) && has_amali_access()) {
+    $user_id = intval($data['target_user_id']);
+}
 
 // Only accept POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

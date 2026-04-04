@@ -13,6 +13,9 @@ if (!is_logged_in()) {
 }
 
 $user_id = $_SESSION['user_id'];
+if (isset($_POST['target_user_id']) && has_amali_access()) {
+    $user_id = intval($_POST['target_user_id']);
+}
 
 // Only accept POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
