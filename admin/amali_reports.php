@@ -136,7 +136,15 @@ require_once '../includes/header.php';
 </style>
 
 <div class="container">
-    <h1 class="mb-3" style="font-size: 1.5rem;"><i class="fas fa-chart-bar"></i> Amali Janib Reports</h1>
+    <h1 class="mb-3" style="font-size: 1.5rem;"><i class="fas fa-chart-bar"></i> Amali Janib Reports 
+        <?php if ($filter_category): ?>
+            <span class="badge badge-primary" style="font-size: 0.9rem; vertical-align: middle; background-color: #6366f1;">
+                <?php echo htmlspecialchars($filter_category); ?> Branch
+            </span>
+        <?php else: ?>
+            <span class="badge badge-secondary" style="font-size: 0.9rem; vertical-align: middle;">Global</span>
+        <?php endif; ?>
+    </h1>
 
     <!-- Report Type Selector -->
     <div class="card" style="margin-bottom: 1rem;">
@@ -171,7 +179,7 @@ require_once '../includes/header.php';
                 FROM users u
                 LEFT JOIN quran_progress qp ON u.id = qp.user_id
                 LEFT JOIN book_transcription bt ON u.id = bt.user_id
-                WHERE 1=1" . $category_filter_sql . $classification_filter_sql . "
+                WHERE u.role = 'user'" . $category_filter_sql . $classification_filter_sql . "
                 GROUP BY u.id, u.name, u.its_number, u.category, u.classification, u.email, u.phone_number";
 
         // Add sorting (Note: overall_progress is calculated in PHP, so we'll sort that later)
@@ -202,7 +210,7 @@ require_once '../includes/header.php';
                 FROM users u
                 LEFT JOIN quran_progress qp ON u.id = qp.user_id
                 LEFT JOIN book_transcription bt ON u.id = bt.user_id
-                WHERE 1=1" . $category_filter_sql . $classification_filter_sql;
+                WHERE u.role = 'user'" . $category_filter_sql . $classification_filter_sql;
 
         if (!empty($category_filter_params)) {
             $stmt = $conn->prepare($sql);
@@ -442,22 +450,26 @@ require_once '../includes/header.php';
                                 <option value="Nairobi" <?php echo $filter_category === 'Nairobi' ? 'selected' : ''; ?>>Nairobi</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-tags"></i> Filter by Category</label>
-                            <select name="filter_classification" class="form-control">
-                                <option value="">-- Select Classification --</option>
-                                <option value="Talabat" <?php echo ($filter_classification == 'Talabat') ? 'selected' : ''; ?>>Talabat</option>
-                                <option value="Taalebaat" <?php echo ($filter_classification == 'Taalebaat') ? 'selected' : ''; ?>>Taalebaat</option>
-                                <option value="Muntasebeen" <?php echo ($filter_classification == 'Muntasebeen') ? 'selected' : ''; ?>>Muntasebeen</option>
-                                <option value="Muntasebaat" <?php echo ($filter_classification == 'Muntasebaat') ? 'selected' : ''; ?>>Muntasebaat</option>
-                            </select>
-                        </div>
-
                     <?php else: ?>
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> Showing from <strong><?php echo htmlspecialchars($assigned_category); ?></strong> only.
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Jamea (Fixed)</label>
+                            <div class="alert alert-info" style="padding: 0.5rem 0.75rem; margin-bottom: 0;">
+                                <i class="fas fa-info-circle"></i> <strong><?php echo htmlspecialchars($assigned_category); ?></strong>
+                            </div>
                         </div>
                     <?php endif; ?>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-tags"></i> Filter by Classification</label>
+                        <select name="filter_classification" class="form-control">
+                            <option value="">-- All Classifications --</option>
+                            <option value="Talabat" <?php echo ($filter_classification == 'Talabat') ? 'selected' : ''; ?>>Talabat</option>
+                            <option value="Taalebaat" <?php echo ($filter_classification == 'Taalebaat') ? 'selected' : ''; ?>>Taalebaat</option>
+                            <option value="Muntasebeen" <?php echo ($filter_classification == 'Muntasebeen') ? 'selected' : ''; ?>>Muntasebeen</option>
+                            <option value="Muntasebaat" <?php echo ($filter_classification == 'Muntasebaat') ? 'selected' : ''; ?>>Muntasebaat</option>
+                        </select>
+                    </div>
+                </div>
                     <div class="form-group">
                         <label><i class="fas fa-sort"></i> Sort By</label>
                         <select name="sort_by" class="form-control" onchange="this.form.submit()">
@@ -694,7 +706,7 @@ require_once '../includes/header.php';
                     END as status
                 FROM users u
                 LEFT JOIN quran_progress qp ON u.id = qp.user_id
-                WHERE 1=1";
+                WHERE u.role = 'user'";
 
         $params = [];
         $types = '';
@@ -753,22 +765,25 @@ require_once '../includes/header.php';
                             <option value="Muntasib" <?php echo $filter_category === 'Muntasib' ? 'selected' : ''; ?>>Muntasib</option>
                         </select>
                     </div>
-                    <div class="form-group" style="margin-bottom: var(--spacing-md);">
-                        <label><i class="fas fa-tags"></i> Filter by Category</label>
-                        <select name="filter_classification" class="form-control">
-                            <option value="">-- Select Classification --</option>
-                            <option value="Talabat" <?php echo ($filter_classification == 'Talabat') ? 'selected' : ''; ?>>Talabat</option>
-                            <option value="Taalebaat" <?php echo ($filter_classification == 'Taalebaat') ? 'selected' : ''; ?>>Taalebaat</option>
-                            <option value="Muntasebeen" <?php echo ($filter_classification == 'Muntasebeen') ? 'selected' : ''; ?>>Muntasebeen</option>
-                            <option value="Muntasebaat" <?php echo ($filter_classification == 'Muntasebaat') ? 'selected' : ''; ?>>Muntasebaat</option>
-                        </select>
-                    </div>
-
                 <?php else: ?>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> Showing users from <strong><?php echo htmlspecialchars($assigned_category); ?></strong> category only.
+                    <div class="form-group" style="margin-bottom: var(--spacing-md);">
+                        <label><i class="fas fa-map-marker-alt"></i> Jamea (Fixed)</label>
+                        <div class="alert alert-info" style="padding: 0.5rem 0.75rem; margin-bottom: 0;">
+                            <i class="fas fa-info-circle"></i> <strong><?php echo htmlspecialchars($assigned_category); ?></strong>
+                        </div>
                     </div>
                 <?php endif; ?>
+
+                <div class="form-group" style="margin-bottom: var(--spacing-md);">
+                    <label><i class="fas fa-tags"></i> Filter by Classification</label>
+                    <select name="filter_classification" class="form-control">
+                        <option value="">-- All Classifications --</option>
+                        <option value="Talabat" <?php echo ($filter_classification == 'Talabat') ? 'selected' : ''; ?>>Talabat</option>
+                        <option value="Taalebaat" <?php echo ($filter_classification == 'Taalebaat') ? 'selected' : ''; ?>>Taalebaat</option>
+                        <option value="Muntasebeen" <?php echo ($filter_classification == 'Muntasebeen') ? 'selected' : ''; ?>>Muntasebeen</option>
+                        <option value="Muntasebaat" <?php echo ($filter_classification == 'Muntasebaat') ? 'selected' : ''; ?>>Muntasebaat</option>
+                    </select>
+                </div>
                 <div class="action-buttons">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-filter"></i> Apply Filters
@@ -932,22 +947,25 @@ require_once '../includes/header.php';
                             <option value="Muntasib" <?php echo $filter_category === 'Muntasib' ? 'selected' : ''; ?>>Muntasib</option>
                         </select>
                     </div>
-                    <div class="form-group" style="margin-bottom: var(--spacing-md);">
-                        <label><i class="fas fa-tags"></i> Filter by Category</label>
-                        <select name="filter_classification" class="form-control">
-                            <option value="">-- Select Classification --</option>
-                            <option value="Talabat" <?php echo ($filter_classification == 'Talabat') ? 'selected' : ''; ?>>Talabat</option>
-                            <option value="Taalebaat" <?php echo ($filter_classification == 'Taalebaat') ? 'selected' : ''; ?>>Taalebaat</option>
-                            <option value="Muntasebeen" <?php echo ($filter_classification == 'Muntasebeen') ? 'selected' : ''; ?>>Muntasebeen</option>
-                            <option value="Muntasebaat" <?php echo ($filter_classification == 'Muntasebaat') ? 'selected' : ''; ?>>Muntasebaat</option>
-                        </select>
-                    </div>
-
                 <?php else: ?>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> Showing users from <strong><?php echo htmlspecialchars($assigned_category); ?></strong> category only.
+                    <div class="form-group" style="margin-bottom: var(--spacing-md);">
+                        <label><i class="fas fa-map-marker-alt"></i> Jamea (Fixed)</label>
+                        <div class="alert alert-info" style="padding: 0.5rem 0.75rem; margin-bottom: 0;">
+                            <i class="fas fa-info-circle"></i> <strong><?php echo htmlspecialchars($assigned_category); ?></strong>
+                        </div>
                     </div>
                 <?php endif; ?>
+
+                <div class="form-group" style="margin-bottom: var(--spacing-md);">
+                    <label><i class="fas fa-tags"></i> Filter by Classification</label>
+                    <select name="filter_classification" class="form-control">
+                        <option value="">-- All Classifications --</option>
+                        <option value="Talabat" <?php echo ($filter_classification == 'Talabat') ? 'selected' : ''; ?>>Talabat</option>
+                        <option value="Taalebaat" <?php echo ($filter_classification == 'Taalebaat') ? 'selected' : ''; ?>>Taalebaat</option>
+                        <option value="Muntasebeen" <?php echo ($filter_classification == 'Muntasebeen') ? 'selected' : ''; ?>>Muntasebeen</option>
+                        <option value="Muntasebaat" <?php echo ($filter_classification == 'Muntasebaat') ? 'selected' : ''; ?>>Muntasebaat</option>
+                    </select>
+                </div>
                 <div class="action-buttons">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-filter"></i> Apply Filters
@@ -1077,9 +1095,9 @@ require_once '../includes/header.php';
                 </div>
                 <?php if (!$is_category_coordinator): ?>
                     <div class="form-group">
-                        <label><i class="fas fa-map-marker-alt"></i> Filter by Category</label>
+                        <label><i class="fas fa-map-marker-alt"></i> Filter by Jamea</label>
                         <select name="filter_category" class="form-control">
-                            <option value="">All Categories</option>
+                            <option value="">All Jamea</option>
                             <option value="Surat" <?php echo $filter_category === 'Surat' ? 'selected' : ''; ?>>Surat</option>
                             <option value="Marol" <?php echo $filter_category === 'Marol' ? 'selected' : ''; ?>>Marol</option>
                             <option value="Karachi" <?php echo $filter_category === 'Karachi' ? 'selected' : ''; ?>>Karachi</option>
@@ -1088,10 +1106,24 @@ require_once '../includes/header.php';
                         </select>
                     </div>
                 <?php else: ?>
-                    <div class="alert alert-info" style="margin-bottom: var(--spacing-md);">
-                        <i class="fas fa-info-circle"></i> Showing users from <strong><?php echo htmlspecialchars($assigned_category); ?></strong> category only.
+                    <div class="form-group">
+                        <label><i class="fas fa-map-marker-alt"></i> Jamea (Fixed)</label>
+                        <div class="alert alert-info" style="padding: 0.5rem 0.75rem; margin-bottom: 0;">
+                            <i class="fas fa-info-circle"></i> <strong><?php echo htmlspecialchars($assigned_category); ?></strong>
+                        </div>
                     </div>
                 <?php endif; ?>
+
+                <div class="form-group" style="margin-bottom: var(--spacing-md);">
+                    <label><i class="fas fa-tags"></i> Filter by Classification</label>
+                    <select name="filter_classification" class="form-control">
+                        <option value="">-- All Classifications --</option>
+                        <option value="Talabat" <?php echo ($filter_classification == 'Talabat') ? 'selected' : ''; ?>>Talabat</option>
+                        <option value="Taalebaat" <?php echo ($filter_classification == 'Taalebaat') ? 'selected' : ''; ?>>Taalebaat</option>
+                        <option value="Muntasebeen" <?php echo ($filter_classification == 'Muntasebeen') ? 'selected' : ''; ?>>Muntasebeen</option>
+                        <option value="Muntasebaat" <?php echo ($filter_classification == 'Muntasebaat') ? 'selected' : ''; ?>>Muntasebaat</option>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label><i class="fas fa-book"></i> Filter by Book</label>
                     <select name="filter_book" class="form-control">

@@ -13,7 +13,7 @@ $is_finance_admin = has_finance_access();
 $is_amali_admin = has_amali_access();
 
 // Get total users count
-$sql = "SELECT COUNT(*) as total FROM users";
+$sql = "SELECT COUNT(*) as total FROM users WHERE role = 'user'";
 $result = $conn->query($sql);
 $total_users = $result->fetch_assoc()['total'];
 
@@ -424,6 +424,17 @@ require_once '../includes/header.php';
 
     <?php elseif ($is_amali_admin): ?>
         <!-- AMALI COORDINATOR SECTION -->
+        <div class="card mb-4" style="border-left: 5px solid #6366f1;">
+            <div class="card-header" style="background-color: #f5f3ff; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="color: #4338ca; margin: 0;">
+                    <i class="fas fa-chart-line"></i> Amali Janib Dashboard: 
+                    <?php echo ($is_category_coordinator && $assigned_category) ? htmlspecialchars($assigned_category) . ' Branch Stats' : 'Global Stats'; ?>
+                </h3>
+                <?php if ($is_category_coordinator): ?>
+                    <span class="badge badge-primary" style="background-color: #6366f1;">Filtered by Category</span>
+                <?php endif; ?>
+            </div>
+        </div>
         
         <!-- Stats Grid -->
         <div class="stats-grid">

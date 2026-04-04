@@ -11,6 +11,15 @@ $js_path = '../assets/js/';
 // Get filter parameters
 $filter_category = isset($_GET['filter_category']) ? clean_input($_GET['filter_category']) : '';
 
+// Check admin type and set category restrictions
+$is_category_coordinator = is_category_amali_coordinator();
+$assigned_category = get_assigned_category();
+
+// If category amali coordinator, force filter to their assigned category
+if ($is_category_coordinator && $assigned_category) {
+    $filter_category = $assigned_category;
+}
+
 // Get all users with their contribution summary
 $sql = "SELECT 
             u.id,
@@ -25,10 +34,11 @@ $sql = "SELECT
             COALESCE(SUM(c.amount_usd), 0) as total_contributed_usd,
             COALESCE(SUM(c.amount_inr), 0) as total_contributed_inr
         FROM users u
-        LEFT JOIN contributions c ON u.id = c.user_id";
+        LEFT JOIN contributions c ON u.id = c.user_id
+        WHERE u.role = 'user'";
 
 if ($filter_category) {
-    $sql .= " WHERE u.category = ?";
+    $sql .= " AND u.category = ?";
 }
 
 $sql .= " GROUP BY u.id
