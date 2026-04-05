@@ -61,25 +61,21 @@ while ($user = $users_res->fetch_assoc()) {
         else $books['in_progress']++;
     }
     
-    $finance = get_user_contributions($conn, $userId);
-
     // Jamea Insights
     $cat_insights = "";
     if ($user['category']) {
         $ucat = $user['category'];
         $avg_sql = "SELECT 
-            (SELECT AVG(completed_juz) FROM (SELECT user_id, COUNT(*) as completed_juz FROM quran_progress WHERE is_completed = 1 GROUP BY user_id) t JOIN users u ON t.user_id = u.id WHERE u.category = '$ucat') as avg_juz,
-            (SELECT AVG(total_inr) FROM (SELECT user_id, SUM(amount_inr) as total_inr FROM contributions GROUP BY user_id) t JOIN users u ON t.user_id = u.id WHERE u.category = '$ucat') as avg_paid";
+            (SELECT AVG(completed_juz) FROM (SELECT user_id, COUNT(*) as completed_juz FROM quran_progress WHERE is_completed = 1 GROUP BY user_id) t JOIN users u ON t.user_id = u.id WHERE u.category = '$ucat') as avg_juz";
         
         $avg_res = $conn->query($avg_sql);
         if ($avg_res) {
             $avgs = $avg_res->fetch_assoc();
             $avgJuz = round($avgs['avg_juz'] ?? 0, 1);
-            $avgPaid = round($avgs['avg_paid'] ?? 0);
             
             $cat_insights = "<div class='category-insight'>
                 <strong>Jamea Insight ($ucat):</strong><br>
-                On average, Mumineen in your Jamea have completed <strong>$avgJuz Juz</strong> and contributed <strong>" . format_currency($avgPaid, 'INR') . "</strong>. 
+                On average, Mumineen in your Jamea have completed <strong>$avgJuz Juz</strong> of Tilawat ul Quran.
             </div>";
         }
     }
@@ -96,14 +92,6 @@ while ($user = $users_res->fetch_assoc()) {
         
         • Duas Recited: " . number_format($dua_summary['dua'] ?? 0) . "<br>
         • Istinsakh (Books): {$books['completed']} Completed, {$books['in_progress']} In Progress
-    </div>
-
-    <div class='stat-box'>
-        <strong>Financial Progress:</strong><br>
-        • Total Contributed: " . format_currency($finance['total_inr'], 'INR') . "
-        <div class='progress-bar'><div class='progress-fill' style='width: " . min(100, round(($finance['total_inr'] / 127000) * 100)) . "%; background: #2563eb;'></div></div>
-        • Tasea (66k): " . ($finance['total_inr'] >= 66000 ? "✅ Completed" : "Pending") . "<br>
-        • Ashera (97k): " . ($finance['total_inr'] >= 97000 ? "✅ Completed" : "Pending") . "
     </div>
 
     $cat_insights
