@@ -26,9 +26,9 @@ if (!$campaign) {
     exit();
 }
 
-// 3. Get Users not yet sent for this campaign
+// 3. Get Users not yet sent for this campaign (Include Admins as well)
 $sql = "SELECT * FROM users 
-        WHERE role = 'user' 
+        WHERE (role = 'user' OR role = 'admin') AND its_number NOT LIKE '000000%'
         AND id NOT IN (SELECT user_id FROM mail_sent_logs WHERE campaign_id = $campaign_id AND status = 'success')
         LIMIT $batch_size";
 

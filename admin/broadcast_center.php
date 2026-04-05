@@ -51,7 +51,7 @@ $active_campaign = $conn->query("SELECT * FROM mail_campaigns WHERE status = 'ac
 $total_users = 0;
 $sent_users = 0;
 if ($active_campaign) {
-    $total_users = $conn->query("SELECT COUNT(*) as total FROM users WHERE role = 'user'")->fetch_assoc()['total'];
+    $total_users = $conn->query("SELECT COUNT(*) as total FROM users WHERE (role = 'user' OR role = 'admin') AND its_number NOT LIKE '000000%'")->fetch_assoc()['total'];
     $sent_users = $conn->query("SELECT COUNT(*) as sent FROM mail_sent_logs WHERE campaign_id = " . $active_campaign['id'])->fetch_assoc()['sent'];
     $remaining_users = $total_users - $sent_users;
     $progress_pct = calculate_percentage($sent_users, $total_users);
@@ -180,6 +180,64 @@ require_once '../includes/header.php';
                 <i class="fas fa-save"></i> Create and Activate Campaign
             </button>
         </form>
+    </div>
+
+    <!-- TODAY'S LOGS -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-list-check"></i> Today's Delivery Logs (Last 24h)</h3>
+        </div>
+        <div class="table-container">
+            <?php
+            $today_logs_sql = "SELECT l.*, u.name, u.its_number, u.category, c.event_name 
+                              FROM mail_sent_logs l
+                              JOIN users u ON l.user_id = u.id
+                              JOIN mail_campaigns c ON l.campaign_id = c.id
+                              WHERE l.sent_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                              ORDER BY l.sent_at DESC";
+            $today_logs = $conn->query($today_logs_sql);
+            ?>
+            <table class="responsive-table-stack">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Campaign</th>
+                        <th>User</th>
+                        <th>ITS</th>
+                        <th>Jamea</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($today_logs->num_rows > 0): ?>
+                        <?php while ($log = $today_logs->fetch_assoc()): ?>
+                            <tr>
+                                <td data-label="Time"><?php echo date('H:i', strtotime($log['sent_at'])); ?></td>
+                                <td data-label="Campaign"><?php echo htmlspecialchars($log['event_name']); ?></td>
+                                <td data-label="User"><strong><?php echo htmlspecialchars($log['name']); ?></strong></td>
+                                <td data-label="ITS"><?php echo htmlspecialchars($log['its_number']); ?></td>
+                                <td data-label="Jamea"><?php echo htmlspecialchars($log['category']); ?></td>
+                                <td data-label="Status">
+                                    <span class="badge <?php echo $log['status'] === 'success' ? 'badge-success' : 'badge-danger'; ?>">
+                                        <?php echo strtoupper($log['status']); ?>
+                                    </span>
+                                    <?php if ($log['error_message']): ?>
+                                        <i class="fas fa-info-circle text-danger" title="<?php echo htmlspecialchars($log['error_message']); ?>"></i>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="6" class="text-center" style="padding: 2rem; color: var(--text-secondary);">
+                                <i class="fas fa-envelope-open" style="font-size: 2rem; display: block; margin-bottom: 1rem; opacity: 0.3;"></i>
+                                No emails sent in the last 24 hours.
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- CAMPAIGN HISTORY -->
