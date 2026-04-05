@@ -291,40 +291,43 @@ require_once '../includes/header.php';
 </div>
 </div>
 
-<!-- Bulk Assign Amali Panel -->
-<div class="card" id="bulkAssignCard" style="border-left: 5px solid var(--accent-purple);">
-    <div class="card-header" style="background-color: #f5f3ff;">
-        <h3 style="color: var(--accent-purple);"><i class="fas fa-layer-group"></i> Bulk Assign Amali (<span id="selectedCount">0</span> users selected)</h3>
-    </div>
-    <div style="padding: 1rem; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
-        <?php
-        $all_items = $conn->query("SELECT id, dua_name, category FROM duas_master WHERE is_active = 1 ORDER BY category, display_order");
-        ?>
-        <div id="bulkHint" style="width: 100%; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.5rem;">
-            <i class="fas fa-info-circle"></i> Select one or more users from the list below to enable bulk assignment.
-        </div>
-        <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-            <label style="font-size: 0.75rem;">Select Amali Item</label>
-            <select id="bulk_dua_id" class="form-control">
-                <option value="">-- Select Item --</option>
-                <?php while($item = $all_items->fetch_assoc()): ?>
-                    <option value="<?php echo $item['id']; ?>">[<?php echo ucfirst($item['category']); ?>] <?php echo htmlspecialchars($item['dua_name']); ?></option>
-                <?php endwhile; ?>
-            </select>
-        </div>
-        <div class="form-group" style="width: 120px; margin-bottom: 0;">
-            <label style="font-size: 0.75rem;">Count to Add</label>
-            <input type="number" id="bulk_count" class="form-control" value="1" min="1">
-        </div>
-        <button type="button" class="btn btn-primary" onclick="submitBulkAmali()" id="bulkSubmitBtn" disabled>
-            <i class="fas fa-check-double"></i> Assign to Selected
-        </button>
-        <button type="button" class="btn btn-secondary" onclick="clearBulkSelection()">
-            <i class="fas fa-times"></i> Clear Selection
-        </button>
-    </div>
-</div>
-        <!-- Overall Amali Progress -->
+        <div class="card" id="bulkAssignCard" style="border-left: 5px solid var(--accent-purple); position: sticky; top: 10px; z-index: 100; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+            <div class="card-header" style="background-color: #f5f3ff;">
+                <h3 style="color: var(--accent-purple);"><i class="fas fa-layer-group"></i> Bulk Assign Amali (<span id="selectedCount">0</span> users selected)</h3>
+            </div>
+            <div style="padding: 1rem; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                <?php
+                $all_items = $conn->query("SELECT id, dua_name, category FROM duas_master WHERE is_active = 1 ORDER BY category, display_order");
+                ?>
+                <div id="bulkHint" style="width: 100%; color: #6366f1; font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 500;">
+                    <i class="fas fa-info-circle"></i> <span id="hintText">Please scroll down and select users from the list below to begin.</span>
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                    <label style="font-size: 0.75rem;">Select Amali Item</label>
+                    <select id="bulk_dua_id" class="form-control">
+                        <option value="">-- Select Item --</option>
+                        <?php while($item = $all_items->fetch_assoc()): ?>
+                            <option value="<?php echo $item['id']; ?>">[<?php echo ucfirst($item['category']); ?>] <?php echo htmlspecialchars($item['dua_name']); ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                <div class="form-group" style="width: 100px; margin-bottom: 0;">
+                    <label style="font-size: 0.75rem;">Count</label>
+                    <input type="number" id="bulk_count" class="form-control" value="1" min="1">
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" class="btn btn-primary" onclick="submitBulkAmali()" id="bulkSubmitBtn" disabled>
+                        <i class="fas fa-check-double"></i> Assign
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" onclick="toggleVisibleSelection(true)" style="border: 1px solid var(--accent-purple); color: var(--accent-purple);">
+                        <i class="fas fa-check-square"></i> Select All Visible
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearBulkSelection()">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+            </div>
+        </div>        <!-- Overall Amali Progress -->
         <?php
         // Calculate overall progress
         $total_users = $overall_stats['total_users'];
@@ -463,8 +466,8 @@ require_once '../includes/header.php';
             <form method="GET" action="" style="padding: var(--spacing-lg);">
                 <input type="hidden" name="report_type" value="summary">
                 <div class="form-group" style="margin-bottom: var(--spacing-md);">
-                    <label><i class="fas fa-search"></i> Search by Name/ITS</label>
-                    <input type="text" name="search_name" class="form-control" placeholder="Search by name or ITS number..." value="<?php echo htmlspecialchars($search_name); ?>">
+                    <label><i class="fas fa-search"></i> Search by Name/ITS (Instant Filter)</label>
+                    <input type="text" id="instantSearch" name="search_name" class="form-control" placeholder="Type here to filter list instantly..." value="<?php echo htmlspecialchars($search_name); ?>" onkeyup="performInstantSearch()">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
                     <?php if (!$is_category_coordinator): ?>
@@ -741,8 +744,8 @@ require_once '../includes/header.php';
             <form method="GET" action="" style="padding: var(--spacing-lg);">
                 <input type="hidden" name="report_type" value="quran">
                 <div class="form-group" style="margin-bottom: var(--spacing-md);">
-                    <label><i class="fas fa-search"></i> Search by Name/ITS</label>
-                    <input type="text" name="search_name" class="form-control" placeholder="Search by name or ITS number..." value="<?php echo htmlspecialchars($search_name); ?>">
+                    <label><i class="fas fa-search"></i> Search by Name/ITS (Instant Filter)</label>
+                    <input type="text" id="instantSearch" name="search_name" class="form-control" placeholder="Type here to filter list instantly..." value="<?php echo htmlspecialchars($search_name); ?>" onkeyup="performInstantSearch()">
                 </div>
                 <?php if (!$is_category_coordinator): ?>
                     <div class="form-group" style="margin-bottom: var(--spacing-md);">
@@ -913,8 +916,8 @@ require_once '../includes/header.php';
             <form method="GET" action="" style="padding: var(--spacing-lg);">
                 <input type="hidden" name="report_type" value="dua">
                 <div class="form-group" style="margin-bottom: var(--spacing-md);">
-                    <label><i class="fas fa-search"></i> Search by Name/ITS</label>
-                    <input type="text" name="search_name" class="form-control" placeholder="Search by name or ITS number..." value="<?php echo htmlspecialchars($search_name); ?>">
+                    <label><i class="fas fa-search"></i> Search by Name/ITS (Instant Filter)</label>
+                    <input type="text" id="instantSearch" name="search_name" class="form-control" placeholder="Type here to filter list instantly..." value="<?php echo htmlspecialchars($search_name); ?>" onkeyup="performInstantSearch()">
                 </div>
                 <?php if (!$is_category_coordinator): ?>
                     <div class="form-group" style="margin-bottom: var(--spacing-md);">
@@ -1223,6 +1226,38 @@ require_once '../includes/header.php';
 </div>
 
 <script>
+    function performInstantSearch() {
+        const input = document.getElementById('instantSearch');
+        const filter = input.value.toLowerCase();
+        
+        // Filter Table Rows
+        const tableRows = document.querySelectorAll('.table-container tbody tr');
+        tableRows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(filter) ? "" : "none";
+        });
+
+        // Filter Mobile Cards
+        const mobileCards = document.querySelectorAll('.report-card');
+        mobileCards.forEach(card => {
+            const text = card.innerText.toLowerCase();
+            card.style.display = text.includes(filter) ? "" : "none";
+        });
+    }
+
+    function toggleVisibleSelection(check) {
+        // Only select checkboxes that are currently visible (not hidden by search)
+        const allCheckboxes = document.querySelectorAll('.user-checkbox');
+        allCheckboxes.forEach(cb => {
+            // Find parent row or card
+            const container = cb.closest('tr') || cb.closest('.report-card');
+            if (container && container.style.display !== 'none') {
+                cb.checked = check;
+            }
+        });
+        updateBulkUI();
+    }
+
     function toggleAllUsers(source) {
         const checkboxes = document.querySelectorAll('.user-checkbox');
         checkboxes.forEach(cb => {
@@ -1235,13 +1270,18 @@ require_once '../includes/header.php';
         const selected = document.querySelectorAll('.user-checkbox:checked');
         const countSpan = document.getElementById('selectedCount');
         const submitBtn = document.getElementById('bulkSubmitBtn');
+        const hintText = document.getElementById('hintText');
         
         if (selected.length > 0) {
             submitBtn.disabled = false;
             countSpan.innerText = selected.length;
+            hintText.innerHTML = "Great! Now select an Amali item and enter the count to assign to these Mumineen.";
+            hintText.parentElement.style.color = "var(--accent-purple)";
         } else {
             submitBtn.disabled = true;
             countSpan.innerText = "0";
+            hintText.innerHTML = "Please scroll down and select users from the list below to begin.";
+            hintText.parentElement.style.color = "#6366f1";
             document.getElementById('selectAllUsers').checked = false;
         }
     }
@@ -1265,7 +1305,7 @@ require_once '../includes/header.php';
         const btn = document.getElementById('bulkSubmitBtn');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
 
         try {
             const response = await fetch('ajax_bulk_amali.php', {
