@@ -33,9 +33,7 @@ init_session();
                     }
                 </script>
                 <div class="sidebar-header">
-                    <button class="close-sidebar" id="closeSidebar">
-                        <i class="fas fa-times"></i>
-                    </button>
+                 
                     <div class="sidebar-brand">
                         <div class="sidebar-brand-logo" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; background-color: BLUE; color: white; border-radius: 8px;">
                             11
