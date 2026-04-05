@@ -197,7 +197,7 @@ require_once '../includes/header.php';
 
         // Logic: For total counts, include role='system' but handle category filter properly
         // Community users are filtered by branch, but System users (bulk storage) are always included in totals
-        $where_clause = "((u.role = 'user' AND u.its_number NOT LIKE '000000%'";
+        $where_clause = "(((u.role = 'user' OR u.role = 'admin') AND u.its_number NOT LIKE '000000%'";
         if ($filter_category) {
             $where_clause .= " AND u.category = '$filter_category'";
         }
@@ -207,7 +207,7 @@ require_once '../includes/header.php';
         $where_clause .= ") OR (u.role = 'system'))";
 
         $sql = "SELECT 
-                    COUNT(DISTINCT CASE WHEN u.role = 'user' AND u.its_number NOT LIKE '000000%' THEN u.id END) as total_users,
+                    COUNT(DISTINCT CASE WHEN (u.role = 'user' OR u.role = 'admin') AND u.its_number NOT LIKE '000000%' THEN u.id END) as total_users,
                     COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) as total_juz_completed,
                     FLOOR(COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) / 30) as total_qurans_completed,
                     COUNT(DISTINCT CASE WHEN bt.status = 'completed' THEN CONCAT(bt.user_id, '-', bt.book_id) END) as total_books_completed
@@ -1267,14 +1267,19 @@ require_once '../includes/header.php';
     }
 
     function updateBulkUI() {
-        const selected = document.querySelectorAll('.user-checkbox:checked');
+        const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+        const uniqueIds = new Set();
+        selectedCheckboxes.forEach(cb => uniqueIds.add(cb.value));
+        
         const countSpan = document.getElementById('selectedCount');
         const submitBtn = document.getElementById('bulkSubmitBtn');
         const hintText = document.getElementById('hintText');
         
-        if (selected.length > 0) {
+        const count = uniqueIds.size;
+        
+        if (count > 0) {
             submitBtn.disabled = false;
-            countSpan.innerText = selected.length;
+            countSpan.innerText = count;
             hintText.innerHTML = "Great! Now select an Amali item and enter the count to assign to these Mumineen.";
             hintText.parentElement.style.color = "var(--accent-purple)";
         } else {
@@ -1282,9 +1287,22 @@ require_once '../includes/header.php';
             countSpan.innerText = "0";
             hintText.innerHTML = "Please scroll down and select users from the list below to begin.";
             hintText.parentElement.style.color = "#6366f1";
-            document.getElementById('selectAllUsers').checked = false;
+            const selectAll = document.getElementById('selectAllUsers');
+            if (selectAll) selectAll.checked = false;
         }
     }
+
+    // Synchronize checkboxes between Table and Card views
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('user-checkbox')) {
+            const userId = e.target.value;
+            const isChecked = e.target.checked;
+            document.querySelectorAll(`.user-checkbox[value="${userId}"]`).forEach(cb => {
+                cb.checked = isChecked;
+            });
+            updateBulkUI();
+        }
+    });
 
     function clearBulkSelection() {
         document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
