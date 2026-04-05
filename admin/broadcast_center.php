@@ -185,7 +185,7 @@ require_once '../includes/header.php';
     <!-- TODAY'S LOGS -->
     <div class="card">
         <div class="card-header">
-            <h3><i class="fas fa-list-check"></i> Today's Delivery Logs (Last 24h)</h3>
+            <h3><i class="fas fa-list-check"></i> Today's Delivery Logs</h3>
         </div>
         <div class="table-container">
             <?php
@@ -193,7 +193,7 @@ require_once '../includes/header.php';
                               FROM mail_sent_logs l
                               JOIN users u ON l.user_id = u.id
                               JOIN mail_campaigns c ON l.campaign_id = c.id
-                              WHERE l.sent_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                              WHERE DATE(l.sent_at) = CURDATE()
                               ORDER BY l.sent_at DESC";
             $today_logs = $conn->query($today_logs_sql);
             ?>
@@ -280,14 +280,14 @@ require_once '../includes/header.php';
 <script>
 async function startBatchSend(campaignId) {
     const batchSizeInput = document.getElementById('manual_batch_size');
-    const batchSize = parseInt(batchSizeInput.value);
+    const totalToProcess = parseInt(batchSizeInput.value);
     
-    if (isNaN(batchSize) || batchSize < 1) {
+    if (isNaN(totalToProcess) || totalToProcess < 1) {
         showToast('Please enter a valid batch size.', 'error');
         return;
     }
 
-    if (!confirm(`Are you sure you want to send up to ${batchSize} emails now?`)) return;
+    if (!confirm(`Are you sure you want to send up to ${totalToProcess} emails now?`)) return;
 
     const btn = document.getElementById('sendBatchBtn');
     const progressDiv = document.getElementById('batchProgress');
@@ -297,23 +297,25 @@ async function startBatchSend(campaignId) {
     btn.disabled = true;
     batchSizeInput.disabled = true;
     progressDiv.style.display = 'block';
-    logBody.innerHTML = ''; // Clear previous logs
-    batchCounter.innerText = `0 / ${batchSize} Processed`;
+    logBody.innerHTML = ''; 
+    batchCounter.innerText = `0 / ${totalToProcess} Processed`;
 
-    try {
-        const response = await fetch('ajax_broadcast.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `campaign_id=${campaignId}&batch_size=${batchSize}`
-        });
-        
-        // We expect a streamed or multi-line JSON response if we want real-time, 
-        // but for now let's handle the final array of results.
-        const result = await response.json();
-        
-        if (result.success) {
-            // Populate the log table with results
-            result.details.forEach(item => {
+    let processed = 0;
+    let successful = 0;
+    let failed = 0;
+
+    for (let i = 0; i < totalToProcess; i++) {
+        try {
+            const response = await fetch('ajax_broadcast.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `campaign_id=${campaignId}&batch_size=1`
+            });
+            
+            const result = await response.json();
+            
+            if (result.success && result.details && result.details.length > 0) {
+                const item = result.details[0];
                 const tr = document.createElement('tr');
                 const statusClass = item.status === 'success' ? 'badge-success' : 'badge-danger';
                 const statusText = item.status === 'success' ? 'SENT' : 'FAILED';
@@ -329,30 +331,32 @@ async function startBatchSend(campaignId) {
                         ${errorInfo}
                     </td>
                 `;
-                logBody.appendChild(tr);
-            });
+                logBody.insertBefore(tr, logBody.firstChild); // Show newest at top
 
-            batchCounter.innerText = `${result.sent + result.failed} / ${batchSize} Processed`;
-            showToast(result.message, result.failed > 0 ? 'warning' : 'success');
-            
-            // Allow user to see logs before reload
-            const reloadBtn = document.createElement('button');
-            reloadBtn.className = "btn btn-primary mt-3";
-            reloadBtn.innerHTML = "<i class='fas fa-sync'></i> Refresh Dashboard";
-            reloadBtn.onclick = () => location.reload();
-            progressDiv.appendChild(reloadBtn);
-
-        } else {
-            showToast(result.message, 'error');
-            btn.disabled = false;
-            batchSizeInput.disabled = false;
+                processed++;
+                if (item.status === 'success') successful++; else failed++;
+                batchCounter.innerText = `${processed} / ${totalToProcess} Processed`;
+            } else {
+                // No more users to process or campaign completed
+                if (processed === 0) showToast(result.message || 'No more users to process.', 'info');
+                break;
+            }
+        } catch (e) {
+            console.error('Email processing error:', e);
+            failed++;
+            processed++;
+            batchCounter.innerText = `${processed} / ${totalToProcess} Processed`;
         }
-    } catch (e) {
-        showToast('Batch processing failed or timed out.', 'error');
-        console.error(e);
-        btn.disabled = false;
-        batchSizeInput.disabled = false;
     }
+
+    showToast(`Batch completed: ${successful} sent, ${failed} failed.`, failed > 0 ? 'warning' : 'success');
+    
+    // Final UI updates
+    const reloadBtn = document.createElement('button');
+    reloadBtn.className = "btn btn-primary mt-3";
+    reloadBtn.innerHTML = "<i class='fas fa-sync'></i> Refresh Dashboard";
+    reloadBtn.onclick = () => location.reload();
+    progressDiv.appendChild(reloadBtn);
 }
 </script>
 

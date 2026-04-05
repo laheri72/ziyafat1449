@@ -133,9 +133,6 @@ while ($user = $users_res->fetch_assoc()) {
         'status' => $current_status,
         'error' => $error_msg
     ];
-
-    // Short sleep to prevent server strain
-    usleep(500000); // 0.5 seconds
 }
 
 echo json_encode([
