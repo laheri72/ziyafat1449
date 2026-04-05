@@ -39,6 +39,17 @@ $book_progress = get_book_progress($conn, $user_id);
 // Get overall summary
 $summary = get_amali_summary($conn, $user_id);
 
+// Get detailed progress for each category
+$dua_progress_detail = get_dua_progress($conn, $user_id, 'dua');
+$tasbeeh_progress_detail = get_dua_progress($conn, $user_id, 'tasbeeh');
+$namaz_progress_detail = get_dua_progress($conn, $user_id, 'namaz');
+
+// Get finance data
+$settings = get_system_settings($conn);
+$contributions = get_user_contributions($conn, $user_id);
+$finance_progress = calculate_percentage($contributions['total_inr'], 290000); // Total target is 290k INR
+$remaining_inr = 290000 - $contributions['total_inr'];
+
 require_once '../includes/header.php';
 ?>
 
@@ -67,11 +78,20 @@ require_once '../includes/header.php';
                     <i class="fas fa-book" style="font-size: 1.5rem;"></i>
                     <span>Istinsakh Kutub</span>
                 </a>
-                <a href="amali_janib.php" class="btn btn-secondary" style="flex-direction: column; padding: 1.5rem 1rem; gap: 10px;">
-                    <i class="fas fa-chart-line" style="font-size: 1.5rem;"></i>
-                    <span>Full Dashboard</span>
-                </a>
             </div>
+        </div>
+    </div>
+
+    <!-- Ziyarat Card -->
+    <div class="card" style="border-top: 4px solid #0ea5e9; background-color: #f0f9ff;">
+        <div class="card-header" style="background-color: #e0f2fe;">
+            <h3 style="color: #0369a1;"><i class="fas fa-mosque"></i> Ziyarat Raudat Tahera</h3>
+        </div>
+        <div style="padding: var(--spacing-lg); text-align: center;">
+            <p style="margin-bottom: 1rem; color: #0c4a6e;">Perform your Ziyarat and record your presence at Raudat Tahera through the official portal.</p>
+            <a href="https://ziyarat1449.web.app/" target="_blank" class="btn btn-info" style="background-color: #0ea5e9; border-color: #0284c7; padding: 0.75rem 2rem;">
+                <i class="fas fa-external-link-alt"></i> Open Ziyarat Portal
+            </a>
         </div>
     </div>
 
@@ -143,6 +163,40 @@ require_once '../includes/header.php';
             <div class="stat-value"><?php echo $summary['books_in_progress'] ?? 0; ?></div>
             <div class="stat-label">Current Istinsakh</div>
         </div>
+
+        <div class="stat-card" style="border-left: 4px solid #10b981;">
+            <div class="stat-card-header">
+                <h4>Contribution Paid</h4>
+                <div class="stat-icon" style="color: #10b981;">
+                    <i class="fas fa-hand-holding-heart"></i>
+                </div>
+            </div>
+            <div class="stat-value"><?php echo format_currency($contributions['total_inr'], 'INR'); ?></div>
+            <div class="stat-label">Remaining: <?php echo format_currency($remaining_inr, 'INR'); ?></div>
+        </div>
+    </div>
+
+    <!-- Finance Progress Overview -->
+    <div class="card" style="border-top: 4px solid #10b981;">
+        <div class="card-header">
+            <h3><i class="fas fa-hand-holding-usd"></i> Ziyafat Contribution Progress</h3>
+        </div>
+        <div class="progress-container">
+            <div class="progress-label">
+                <span class="progress-label-text">Paid: <?php echo format_currency($contributions['total_inr'], 'INR'); ?> / <?php echo format_currency(290000, 'INR'); ?></span>
+                <span class="progress-label-value"><?php echo $finance_progress; ?>%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: <?php echo $finance_progress; ?>%; background: linear-gradient(90deg, #10b981, #059669);"></div>
+            </div>
+        </div>
+        <?php if ($user['category'] === 'Surat'): ?>
+        <p class="text-center mt-2">
+            <a href="surat_finance_report.php" class="btn btn-success" style="background-color: #10b981; border-color: #059669;">
+                <i class="fas fa-file-invoice-dollar"></i> View Detailed Finance Report
+            </a>
+        </p>
+        <?php endif; ?>
     </div>
 
     <!-- Quran Progress Overview -->
@@ -169,45 +223,111 @@ require_once '../includes/header.php';
     <!-- Category Progress Summary -->
     <div class="card">
         <div class="card-header">
-            <h3><i class="fas fa-chart-bar"></i> Dua, Tasbeeh & Namaz Summary</h3>
+            <h3><i class="fas fa-chart-bar"></i> Dua, Tasbeeh & Namaz Detailed Progress</h3>
         </div>
-        <div class="stats-grid">
-            <div class="stat-card success">
-                <div class="stat-card-header">
-                    <h4>Duas</h4>
-                    <div class="stat-icon">
-                        <i class="fas fa-hands-praying"></i>
-                    </div>
-                </div>
-                <div class="stat-value"><?php echo $category_totals['dua']; ?></div>
-                <div class="stat-label">Total Recited</div>
-            </div>
-
-            <div class="stat-card info">
-                <div class="stat-card-header">
-                    <h4>Tasbeeh</h4>
-                    <div class="stat-icon">
-                        <i class="fas fa-dharmachakra"></i>
-                    </div>
-                </div>
-                <div class="stat-value"><?php echo $category_totals['tasbeeh']; ?></div>
-                <div class="stat-label">Total Count</div>
-            </div>
-
-            <div class="stat-card danger">
-                <div class="stat-card-header">
-                    <h4>Namaz</h4>
-                    <div class="stat-icon">
-                        <i class="fas fa-mosque"></i>
-                    </div>
-                </div>
-                <div class="stat-value"><?php echo $category_totals['namaz']; ?></div>
-                <div class="stat-label">Total Count</div>
+        
+        <!-- Duas -->
+        <div style="padding: 1rem; border-bottom: 1px solid #eee;">
+            <h4 style="margin-bottom: 1rem; color: #10b981;"><i class="fas fa-hands-praying"></i> Duas</h4>
+            <div class="table-container">
+                <?php if ($dua_progress_detail->num_rows > 0): ?>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Dua Name</th>
+                                <th>Progress</th>
+                                <th>Count</th>
+                                <th>Target</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($dua = $dua_progress_detail->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($dua['dua_name']); ?></td>
+                                    <td>
+                                        <div class="progress-bar" style="height: 12px;">
+                                            <div class="progress-fill" style="width: <?php echo $dua['progress_percentage']; ?>%; height: 12px;"></div>
+                                        </div>
+                                    </td>
+                                    <td><?php echo $dua['completed_count']; ?></td>
+                                    <td><?php echo $dua['target_count']; ?></td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
             </div>
         </div>
-        <p class="text-center mt-2">
+
+        <!-- Tasbeeh -->
+        <div style="padding: 1rem; border-bottom: 1px solid #eee;">
+            <h4 style="margin-bottom: 1rem; color: #f59e0b;"><i class="fas fa-dharmachakra"></i> Tasbeeh</h4>
+            <div class="table-container">
+                <?php if ($tasbeeh_progress_detail->num_rows > 0): ?>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tasbeeh</th>
+                                <th>Progress</th>
+                                <th>Count</th>
+                                <th>Target</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($tasbeeh = $tasbeeh_progress_detail->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($tasbeeh['dua_name']); ?></td>
+                                    <td>
+                                        <div class="progress-bar" style="height: 12px;">
+                                            <div class="progress-fill" style="width: <?php echo $tasbeeh['progress_percentage']; ?>%; height: 12px; background: #f59e0b;"></div>
+                                        </div>
+                                    </td>
+                                    <td><?php echo $tasbeeh['completed_count']; ?></td>
+                                    <td><?php echo $tasbeeh['target_count']; ?></td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Namaz -->
+        <div style="padding: 1rem;">
+            <h4 style="margin-bottom: 1rem; color: #8b5cf6;"><i class="fas fa-mosque"></i> Namaz</h4>
+            <div class="table-container">
+                <?php if ($namaz_progress_detail->num_rows > 0): ?>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Namaz</th>
+                                <th>Progress</th>
+                                <th>Count</th>
+                                <th>Target</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while ($namaz = $namaz_progress_detail->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($namaz['dua_name']); ?></td>
+                                    <td>
+                                        <div class="progress-bar" style="height: 12px;">
+                                            <div class="progress-fill" style="width: <?php echo $namaz['progress_percentage']; ?>%; height: 12px; background: #8b5cf6;"></div>
+                                        </div>
+                                    </td>
+                                    <td><?php echo $namaz['completed_count']; ?></td>
+                                    <td><?php echo $namaz['target_count']; ?></td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <p class="text-center mt-2" style="padding-bottom: 1rem;">
             <a href="dua_tracking.php" class="btn btn-success">
-                <i class="fas fa-arrow-right"></i> Update Progress
+                <i class="fas fa-plus-circle"></i> Add New Entry
             </a>
         </p>
     </div>
@@ -217,30 +337,39 @@ require_once '../includes/header.php';
         <div class="card-header">
             <h3><i class="fas fa-book"></i> Istinsakh ul Kutub Progress</h3>
         </div>
-        <div class="stats-grid">
-            <div class="stat-card warning">
-                <div class="stat-card-header">
-                    <h4>Kutub Completed</h4>
-                    <div class="stat-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                </div>
-                <div class="stat-value"><?php echo $summary['books_completed'] ?? 0; ?></div>
-                <div class="stat-label">Completed</div>
-            </div>
-
-            <div class="stat-card purple">
-                <div class="stat-card-header">
-                    <h4>Kutub In Progress</h4>
-                    <div class="stat-icon">
-                        <i class="fas fa-book-open"></i>
-                    </div>
-                </div>
-                <div class="stat-value"><?php echo $summary['books_in_progress'] ?? 0; ?></div>
-                <div class="stat-label">In Progress</div>
-            </div>
+        <div class="table-container">
+            <?php if ($book_progress->num_rows > 0): ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Book Name</th>
+                            <th>Author</th>
+                            <th>Status</th>
+                            <th>Started</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php while ($book = $book_progress->fetch_assoc()): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($book['book_name']); ?></td>
+                                <td><?php echo htmlspecialchars($book['author']); ?></td>
+                                <td>
+                                    <?php if ($book['status'] === 'completed'): ?>
+                                        <span class="badge badge-success">Completed</span>
+                                    <?php else: ?>
+                                        <span class="badge badge-warning">In Progress</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo $book['started_date'] ? date('M d, Y', strtotime($book['started_date'])) : '-'; ?></td>
+                            </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <p class="text-center" style="padding: 1rem;">No books currently selected.</p>
+            <?php endif; ?>
         </div>
-        <p class="text-center mt-2">
+        <p class="text-center mt-2" style="padding-bottom: 1rem;">
             <a href="book_transcription.php" class="btn btn-warning">
                 <i class="fas fa-arrow-right"></i> Manage Books
             </a>

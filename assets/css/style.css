@@ -141,6 +141,34 @@ body {
 .sidebar-header {
     padding: var(--spacing-xl);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.close-sidebar {
+    display: none;
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.close-sidebar:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 1024px) {
+    .close-sidebar {
+        display: flex;
+    }
 }
 
 .sidebar-brand {

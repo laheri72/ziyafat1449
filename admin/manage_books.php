@@ -4,8 +4,8 @@ require_once '../includes/functions.php';
 
 require_admin();
 
-// Check if user has amali access
-if (!has_amali_access()) {
+// Check if user is super admin
+if (!is_super_admin()) {
     header('Location: index.php');
     exit();
 }

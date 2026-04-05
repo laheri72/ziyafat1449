@@ -76,6 +76,7 @@ function initSidebar() {
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const closeSidebar = document.getElementById('closeSidebar');
     const html = document.documentElement;
 
     if (menuToggle && sidebar && sidebarOverlay) {
@@ -84,10 +85,10 @@ function initSidebar() {
                 // Mobile: Toggle slide-in
                 sidebar.classList.toggle('active');
                 sidebarOverlay.classList.toggle('active');
+                document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
             } else {
                 // Desktop: Toggle collapse
                 sidebar.classList.toggle('collapsed');
-                // Remove the helper class once user interacts
                 html.classList.remove('sidebar-is-collapsed');
                 
                 if (sidebar.classList.contains('collapsed')) {
@@ -98,9 +99,15 @@ function initSidebar() {
             }
         });
 
-        sidebarOverlay.addEventListener('click', function() {
-            sidebar.classList.remove('active');
-            sidebarOverlay.classList.remove('active');
+        const closeActions = [sidebarOverlay, closeSidebar];
+        closeActions.forEach(el => {
+            if (el) {
+                el.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    sidebarOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            }
         });
     }
 }
@@ -136,8 +143,9 @@ function searchTable(inputId, tableId) {
     }
 }
 
-// Initialize search on page load
+// Initialize on load
 document.addEventListener('DOMContentLoaded', function() {
+    initSidebar();
     searchTable('searchInput', 'dataTable');
 });
 

@@ -13,7 +13,7 @@ $is_finance_admin = has_finance_access();
 $is_amali_admin = has_amali_access();
 
 // Get total users count
-$sql = "SELECT COUNT(*) as total FROM users WHERE role = 'user'";
+$sql = "SELECT COUNT(*) as total FROM users WHERE (role = 'user' OR role = 'admin') AND its_number NOT LIKE '000000%'";
 $result = $conn->query($sql);
 $total_users = $result->fetch_assoc()['total'];
 
@@ -50,20 +50,27 @@ if ($is_amali_admin) {
     $is_category_coordinator = is_category_amali_coordinator();
     $assigned_category = get_assigned_category();
     
-    $where_sql = " WHERE role = 'user'";
-    $where_sql_alias = " WHERE u.role = 'user'";
-    $params = [];
+    // For user counting: Include both users and admins who participate
+    $where_sql_users = " WHERE (role = 'user' OR role = 'admin') AND its_number NOT LIKE '000000%'";
+    // For data sums: Include real users, admins + system bulk storage
+    $where_sql_data = " WHERE (u.role = 'user' OR u.role = 'admin' OR u.role = 'system')";
+    
+    $params_users = [];
+    $params_data = [];
     if ($is_category_coordinator && $assigned_category) {
-        $where_sql .= " AND category = ?";
-        $where_sql_alias .= " AND u.category = ?";
-        $params[] = $assigned_category;
+        $where_sql_users .= " AND category = ?";
+        $params_users[] = $assigned_category;
+        
+        // For regional coordinators, show their branch (users+admins) + global bulk storage
+        $where_sql_data .= " AND (u.category = ? OR u.role = 'system')";
+        $params_data[] = $assigned_category;
     }
     
     // Get total users for this coordinator
-    $sql_total = "SELECT COUNT(*) as total FROM users" . $where_sql;
-    if (!empty($params)) {
+    $sql_total = "SELECT COUNT(*) as total FROM users" . $where_sql_users;
+    if (!empty($params_users)) {
         $stmt = $conn->prepare($sql_total);
-        $stmt->bind_param("s", $params[0]);
+        $stmt->bind_param("s", $params_users[0]);
         $stmt->execute();
         $total_users = $stmt->get_result()->fetch_assoc()['total'];
     } else {
@@ -75,11 +82,11 @@ if ($is_amali_admin) {
                     COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) as total_juz_completed,
                     FLOOR(COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) / 30) as total_qurans_completed
                 FROM users u
-                LEFT JOIN quran_progress qp ON u.id = qp.user_id" . $where_sql_alias;
+                LEFT JOIN quran_progress qp ON u.id = qp.user_id" . $where_sql_data;
     
-    if ($is_category_coordinator && $assigned_category) {
+    if (!empty($params_data)) {
         $stmt = $conn->prepare($sql_amali);
-        $stmt->bind_param("s", $assigned_category);
+        $stmt->bind_param("s", $params_data[0]);
         $stmt->execute();
         $amali_stats = $stmt->get_result()->fetch_assoc();
     } else {
@@ -92,12 +99,12 @@ if ($is_amali_admin) {
                         COALESCE(SUM(de.count_added), 0) as total_count
                     FROM duas_master dm
                     LEFT JOIN dua_entries de ON dm.id = de.dua_id
-                    LEFT JOIN users u ON de.user_id = u.id" . $where_sql_alias . 
+                    LEFT JOIN users u ON de.user_id = u.id" . $where_sql_data . 
                     " GROUP BY dm.category";
     
-    if ($is_category_coordinator && $assigned_category) {
+    if (!empty($params_data)) {
         $stmt = $conn->prepare($sql_categories);
-        $stmt->bind_param("s", $assigned_category);
+        $stmt->bind_param("s", $params_data[0]);
         $stmt->execute();
         $cat_res = $stmt->get_result();
     } else {
@@ -114,11 +121,11 @@ if ($is_amali_admin) {
                     COUNT(DISTINCT CASE WHEN bt.status = 'completed' THEN CONCAT(bt.user_id, '-', bt.book_id) END) as total_completed,
                     COUNT(DISTINCT CASE WHEN bt.status = 'selected' THEN CONCAT(bt.user_id, '-', bt.book_id) END) as total_in_progress
                   FROM users u
-                  JOIN book_transcription bt ON u.id = bt.user_id" . $where_sql_alias;
+                  JOIN book_transcription bt ON u.id = bt.user_id" . $where_sql_data;
     
-    if ($is_category_coordinator && $assigned_category) {
+    if (!empty($params_data)) {
         $stmt = $conn->prepare($sql_books);
-        $stmt->bind_param("s", $assigned_category);
+        $stmt->bind_param("s", $params_data[0]);
         $stmt->execute();
         $books_stats = $stmt->get_result()->fetch_assoc();
     } else {
@@ -365,11 +372,32 @@ require_once '../includes/header.php';
                 <a href="reports.php" class="btn btn-warning">
                     <i class="fas fa-chart-bar"></i> View Reports
                 </a>
+                <a href="https://ziyarat1449.web.app/" target="_blank" class="btn btn-info" style="background-color: #0ea5e9; color: white;">
+                    <i class="fas fa-mosque"></i> Ziyarat Portal
+                </a>
                 <?php if (is_super_admin()): ?>
                 <a href="broadcast_center.php" class="btn btn-purple" style="background-color: #8b5cf6; color: white;">
                     <i class="fas fa-bullhorn"></i> Broadcast Center
                 </a>
+                <a href="bulk_amali_entry.php" class="btn btn-dark" style="background-color: #1e293b; color: white;">
+                    <i class="fas fa-layer-group"></i> Bulk Amali Entry
+                </a>
                 <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Ziyarat Card -->
+        <div class="card" style="border-top: 4px solid #0ea5e9; background-color: #f0f9ff;">
+            <div class="card-header" style="background-color: #e0f2fe;">
+                <h3 style="color: #0369a1;"><i class="fas fa-mosque"></i> Raudat Tahera Ziyarat Portal</h3>
+            </div>
+            <div style="padding: var(--spacing-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div style="flex: 1; min-width: 300px;">
+                    <p style="color: #0c4a6e; margin: 0;">Direct students or record collective Ziyarat presence through the external portal.</p>
+                </div>
+                <a href="https://ziyarat1449.web.app/" target="_blank" class="btn btn-info" style="background-color: #0ea5e9; border-color: #0284c7;">
+                    <i class="fas fa-external-link-alt"></i> Access Ziyarat Portal
+                </a>
             </div>
         </div>
 
@@ -624,12 +652,17 @@ require_once '../includes/header.php';
                 <a href="amali_reports.php" class="btn btn-primary">
                     <i class="fas fa-chart-bar"></i> View Amali Reports
                 </a>
+                <a href="https://ziyarat1449.web.app/" target="_blank" class="btn btn-info" style="background-color: #0ea5e9; color: white;">
+                    <i class="fas fa-mosque"></i> Ziyarat Portal
+                </a>
+                <?php if (is_super_admin()): ?>
                 <a href="manage_duas.php" class="btn btn-success">
                     <i class="fas fa-hands-praying"></i> Manage Duas
                 </a>
                 <a href="manage_books.php" class="btn btn-warning">
                     <i class="fas fa-book"></i> Manage Books
                 </a>
+                <?php endif; ?>
                 <a href="view_users.php" class="btn btn-secondary">
                     <i class="fas fa-users"></i> View All Users
                 </a>

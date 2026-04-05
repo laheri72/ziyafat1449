@@ -33,6 +33,9 @@ init_session();
                     }
                 </script>
                 <div class="sidebar-header">
+                    <button class="close-sidebar" id="closeSidebar">
+                        <i class="fas fa-times"></i>
+                    </button>
                     <div class="sidebar-brand">
                         <div class="sidebar-brand-logo" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; background-color: BLUE; color: white; border-radius: 8px;">
                             11
@@ -74,9 +77,9 @@ init_session();
                                 </a>
                             </div>
                             <div class="nav-item">
-                                <a href="../user/amali_janib.php" class="nav-link <?php echo strpos($_SERVER['PHP_SELF'], 'user/amali_janib.php') !== false || strpos($_SERVER['PHP_SELF'], 'user/quran_tracking.php') !== false || strpos($_SERVER['PHP_SELF'], 'user/dua_tracking.php') !== false || strpos($_SERVER['PHP_SELF'], 'user/book_transcription.php') !== false ? 'active' : ''; ?>">
-                                    <i class="fas fa-hands-praying"></i>
-                                    <span>My Amali Janib</span>
+                                <a href="../user/profile.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'profile.php' ? 'active' : ''; ?>">
+                                    <i class="fas fa-user"></i>
+                                    <span>My Profile</span>
                                 </a>
                             </div>
                         </div>
@@ -114,6 +117,7 @@ init_session();
                         <?php if (has_amali_access()): ?>
                             <div class="nav-section">
                                 <div class="nav-section-title">Amali Janib</div>
+                                <?php if (is_super_admin()): ?>
                                 <div class="nav-item">
                                     <a href="../admin/manage_duas.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'manage_duas.php' ? 'active' : ''; ?>">
                                         <i class="fas fa-hands-praying"></i>
@@ -126,6 +130,7 @@ init_session();
                                         <span>Manage Kutub</span>
                                     </a>
                                 </div>
+                                <?php endif; ?>
                                 <div class="nav-item">
                                     <a href="../admin/amali_reports.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'amali_reports.php' ? 'active' : ''; ?>">
                                         <i class="fas fa-chart-bar"></i>
@@ -166,12 +171,6 @@ init_session();
 
                         <div class="nav-section">
                             <div class="nav-section-title">Amali Janib</div>
-                            <div class="nav-item">
-                                <a href="../user/amali_janib.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'amali_janib.php' ? 'active' : ''; ?>">
-                                    <i class="fas fa-tasks"></i>
-                                    <span>Overview</span>
-                                </a>
-                            </div>
                             <div class="nav-item">
                                 <a href="../user/quran_tracking.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'quran_tracking.php' ? 'active' : ''; ?>">
                                     <i class="fas fa-quran"></i>

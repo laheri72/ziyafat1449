@@ -164,6 +164,11 @@ require_once '../includes/header.php';
             <a href="?report_type=books" class="btn <?php echo $report_type === 'books' ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
                 <i class="fas fa-book"></i> Kutub
             </a>
+            <?php if (is_super_admin()): ?>
+            <a href="bulk_amali_entry.php" class="btn btn-dark" style="padding: 0.5rem 1rem; font-size: 0.85rem; background-color: #1e293b; color: white;">
+                <i class="fas fa-layer-group"></i> Bulk Collective Entry
+            </a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -179,7 +184,7 @@ require_once '../includes/header.php';
                 FROM users u
                 LEFT JOIN quran_progress qp ON u.id = qp.user_id
                 LEFT JOIN book_transcription bt ON u.id = bt.user_id
-                WHERE u.role = 'user'" . $category_filter_sql . $classification_filter_sql . "
+                WHERE (u.role = 'user' OR u.role = 'admin') AND u.its_number NOT LIKE '000000%'" . $category_filter_sql . $classification_filter_sql . "
                 GROUP BY u.id, u.name, u.its_number, u.category, u.classification, u.email, u.phone_number";
 
         // Add sorting (Note: overall_progress is calculated in PHP, so we'll sort that later)
@@ -201,26 +206,28 @@ require_once '../includes/header.php';
             $users_summary = $conn->query($sql);
         }
 
-        // Get overall stats with category filter
+        // Logic: For total counts, include role='system' but handle category filter properly
+        // Community users are filtered by branch, but System users (bulk storage) are always included in totals
+        $where_clause = "((u.role = 'user' AND u.its_number NOT LIKE '000000%'";
+        if ($filter_category) {
+            $where_clause .= " AND u.category = '$filter_category'";
+        }
+        if ($filter_classification) {
+            $where_clause .= " AND u.classification = '$filter_classification'";
+        }
+        $where_clause .= ") OR (u.role = 'system'))";
+
         $sql = "SELECT 
-                    COUNT(DISTINCT u.id) as total_users,
+                    COUNT(DISTINCT CASE WHEN u.role = 'user' AND u.its_number NOT LIKE '000000%' THEN u.id END) as total_users,
                     COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) as total_juz_completed,
                     FLOOR(COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) / 30) as total_qurans_completed,
                     COUNT(DISTINCT CASE WHEN bt.status = 'completed' THEN CONCAT(bt.user_id, '-', bt.book_id) END) as total_books_completed
                 FROM users u
                 LEFT JOIN quran_progress qp ON u.id = qp.user_id
                 LEFT JOIN book_transcription bt ON u.id = bt.user_id
-                WHERE u.role = 'user'" . $category_filter_sql . $classification_filter_sql;
+                WHERE $where_clause";
 
-        if (!empty($category_filter_params)) {
-            $stmt = $conn->prepare($sql);
-            $param_types = str_repeat('s', count($category_filter_params));
-            $stmt->bind_param($param_types, ...$category_filter_params);
-            $stmt->execute();
-            $overall_stats = $stmt->get_result()->fetch_assoc();
-        } else {
-            $overall_stats = $conn->query($sql)->fetch_assoc();
-        }
+        $overall_stats = $conn->query($sql)->fetch_assoc();
 
         // Get category-wise dua counts with user category filter
         $where_conditions = [];
