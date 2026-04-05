@@ -53,85 +53,74 @@ require_once '../includes/header.php';
 ?>
 
 <style>
-    /* Compact Report Styling */
-    .card {
-        margin-bottom: 1rem !important;
+    /* Professional Report Styling */
+    .report-wrapper {
+        min-height: 400px;
+        position: relative;
+        width: 100%;
+        overflow: hidden; /* Prevent child elements from pushing width */
     }
 
-    .card-header {
-        padding: 0.75rem 1rem !important;
+    .table-container {
+        width: 100%;
+        background: #fff;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
     }
 
-    .card-header h3 {
-        font-size: 1rem !important;
-        margin: 0 !important;
+    /* Desktop Table Styles */
+    @media (min-width: 769px) {
+        .mobile-report-cards { display: none !important; }
+        .table-container { display: block !important; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        th { background: var(--bg-secondary); color: var(--text-secondary); font-weight: 600; text-align: left; padding: 12px 15px; border-bottom: 2px solid var(--border-color); }
+        td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
     }
 
-    .progress-container {
-        padding: 0.75rem 1rem !important;
-    }
+    /* Mobile Card Styles (Replaces Table) */
+    @media (max-width: 768px) {
+        .table-container { display: none !important; } 
+        .mobile-report-cards { display: block !important; width: 100%; }
+        
+        .report-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            width: 100%;
+            box-sizing: border-box;
+        }
 
-    .progress-label {
-        margin-bottom: 0.5rem !important;
-    }
+        .report-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px dashed var(--border-color);
+        }
 
-    .progress-label-text,
-    .progress-label-value {
-        font-size: 0.85rem !important;
-    }
+        .report-card-title { font-weight: 700; color: var(--text-primary); font-size: 1rem; line-height: 1.2; }
+        .report-card-subtitle { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+        
+        .report-card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
 
-    .progress-bar {
-        height: 14px !important;
-    }
-
-    .progress-fill {
-        height: 14px !important;
-        font-size: 0.75rem !important;
-        line-height: 14px !important;
-    }
-
-    .form-group {
-        margin-bottom: 0.75rem !important;
-    }
-
-    .form-group label {
-        font-size: 0.85rem !important;
-    }
-
-    .action-buttons {
-        padding: 0.75rem 1rem !important;
-    }
-
-    .btn {
-        padding: 0.5rem 1rem !important;
-        font-size: 0.85rem !important;
-    }
-
-    table {
-        font-size: 0.85rem !important;
-    }
-
-    table thead tr {
-        font-size: 0.8rem !important;
-    }
-
-    table th,
-    table td {
-        padding: 0.4rem 0.5rem !important;
-    }
-
-    table tbody tr {
-        font-size: 0.8rem !important;
-    }
-
-    .badge {
-        font-size: 0.7rem !important;
-        padding: 0.25rem 0.5rem !important;
-    }
-
-    .alert {
-        font-size: 0.85rem !important;
-        padding: 0.75rem !important;
+        .report-data-item { display: flex; flex-direction: column; gap: 2px; }
+        .report-data-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 600; }
+        .report-data-value { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); }
+        
+        .report-card-full { grid-column: 1 / -1; margin-top: 0.5rem; }
+        
+        /* Adjust page header for mobile */
+        .container { padding-left: 10px; padding-right: 10px; overflow-x: hidden; }
+        .action-buttons { overflow-x: auto; white-space: nowrap; padding-bottom: 5px; -webkit-overflow-scrolling: touch; display: flex; gap: 5px; }
+        .action-buttons .btn { flex: 0 0 auto; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
     }
 </style>
 
@@ -295,14 +284,46 @@ require_once '../includes/header.php';
                 <div class="stat-value" style="font-size: 1.75rem;"><?php echo $category_stats['namaz']; ?></div>
                 <div class="stat-label" style="font-size: 0.75rem;">Count</div>
             </div>
+<div class="stat-card danger" style="padding: 0.75rem;">
+    <h4 style="font-size: 0.85rem; margin-bottom: 0.5rem;"><i class="fas fa-book"></i> Kutub</h4>
+    <div class="stat-value" style="font-size: 1.75rem;"><?php echo $overall_stats['total_books_completed']; ?></div>
+    <div class="stat-label" style="font-size: 0.75rem;">Done</div>
+</div>
+</div>
 
-            <div class="stat-card danger" style="padding: 0.75rem;">
-                <h4 style="font-size: 0.85rem; margin-bottom: 0.5rem;"><i class="fas fa-book"></i> Kutub</h4>
-                <div class="stat-value" style="font-size: 1.75rem;"><?php echo $overall_stats['total_books_completed']; ?></div>
-                <div class="stat-label" style="font-size: 0.75rem;">Done</div>
-            </div>
+<!-- Bulk Assign Amali Panel -->
+<div class="card" id="bulkAssignCard" style="border-left: 5px solid var(--accent-purple);">
+    <div class="card-header" style="background-color: #f5f3ff;">
+        <h3 style="color: var(--accent-purple);"><i class="fas fa-layer-group"></i> Bulk Assign Amali (<span id="selectedCount">0</span> users selected)</h3>
+    </div>
+    <div style="padding: 1rem; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <?php
+        $all_items = $conn->query("SELECT id, dua_name, category FROM duas_master WHERE is_active = 1 ORDER BY category, display_order");
+        ?>
+        <div id="bulkHint" style="width: 100%; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.5rem;">
+            <i class="fas fa-info-circle"></i> Select one or more users from the list below to enable bulk assignment.
         </div>
-
+        <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+            <label style="font-size: 0.75rem;">Select Amali Item</label>
+            <select id="bulk_dua_id" class="form-control">
+                <option value="">-- Select Item --</option>
+                <?php while($item = $all_items->fetch_assoc()): ?>
+                    <option value="<?php echo $item['id']; ?>">[<?php echo ucfirst($item['category']); ?>] <?php echo htmlspecialchars($item['dua_name']); ?></option>
+                <?php endwhile; ?>
+            </select>
+        </div>
+        <div class="form-group" style="width: 120px; margin-bottom: 0;">
+            <label style="font-size: 0.75rem;">Count to Add</label>
+            <input type="number" id="bulk_count" class="form-control" value="1" min="1">
+        </div>
+        <button type="button" class="btn btn-primary" onclick="submitBulkAmali()" id="bulkSubmitBtn" disabled>
+            <i class="fas fa-check-double"></i> Assign to Selected
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="clearBulkSelection()">
+            <i class="fas fa-times"></i> Clear Selection
+        </button>
+    </div>
+</div>
         <!-- Overall Amali Progress -->
         <?php
         // Calculate overall progress
@@ -486,7 +507,6 @@ require_once '../includes/header.php';
                             <option value="books" <?php echo $sort_by === 'books' ? 'selected' : ''; ?>>Kutub Completed</option>
                         </select>
                     </div>
-                </div>
                 <?php if ($sort_by): ?>
                     <div class="form-group" style="margin-bottom: var(--spacing-md);">
                         <label><i class="fas fa-arrow-down-up-across-line"></i> Sort Order</label>
@@ -513,190 +533,151 @@ require_once '../includes/header.php';
             <div class="card-header">
                 <h3><i class="fas fa-users"></i> User-wise Amali Progress</h3>
             </div>
-            <div class="table-container">
-                <?php if ($users_summary->num_rows > 0): ?>
-                    <table style="font-size: 0.85rem;">
-                        <thead>
-                            <tr style="font-size: 0.8rem;">
-                                <th style="padding: 0.5rem;">ITS</th>
-                                <th style="padding: 0.5rem;">Name</th>
-                                <th style="padding: 0.5rem;">Contact</th>
-                                <th style="padding: 0.5rem;">Jamea</th>
-                                <th style="padding: 0.5rem;">Class.</th>
-                                <th style="padding: 0.5rem; min-width: 120px;">Progress</th>
-                                <th style="padding: 0.5rem;">Qurans</th>
-                                <th style="padding: 0.5rem;">Juz</th>
-                                <th style="padding: 0.5rem;">Duas</th>
-                                <th style="padding: 0.5rem;">Tasb.</th>
-                                <th style="padding: 0.5rem;">Namaz</th>
-                                <th style="padding: 0.5rem;">Kutub</th>
-                                <th style="padding: 0.5rem;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            // Get target counts for each category
-                            $sql_targets = "SELECT category, SUM(target_count) as total_target 
-                                           FROM duas_master 
-                                           WHERE is_active = 1 
-                                           GROUP BY category";
-                            $targets_result = $conn->query($sql_targets);
-                            $category_targets = ['dua' => 0, 'tasbeeh' => 0, 'namaz' => 0];
-                            while ($row = $targets_result->fetch_assoc()) {
-                                $category_targets[$row['category']] = $row['total_target'];
-                            }
-
-                            // Get category-wise counts for each user with category filter
-                            $sql_user_categories = "SELECT 
-                                                    u.id as user_id,
-                                                    dm.category,
-                                                    COALESCE(SUM(de.count_added), 0) as count
-                                                FROM users u
-                                                CROSS JOIN duas_master dm
-                                                LEFT JOIN dua_entries de ON u.id = de.user_id AND dm.id = de.dua_id
-                                                WHERE dm.is_active = 1" . $category_filter_sql . $classification_filter_sql . "
-                                                GROUP BY u.id, dm.category";
-
-                            if (!empty($category_filter_params)) {
-                                $stmt = $conn->prepare($sql_user_categories);
-                                $param_types = str_repeat('s', count($category_filter_params));
-                                $stmt->bind_param($param_types, ...$category_filter_params);
-                                $stmt->execute();
-                                $user_cat_result = $stmt->get_result();
-                            } else {
-                                $user_cat_result = $conn->query($sql_user_categories);
-                            }
-                            $user_category_data = [];
-                            while ($row = $user_cat_result->fetch_assoc()) {
-                                if (!isset($user_category_data[$row['user_id']])) {
-                                    $user_category_data[$row['user_id']] = ['dua' => 0, 'tasbeeh' => 0, 'namaz' => 0];
+            
+            <div class="report-wrapper">
+                <!-- Desktop Table View -->
+                <div class="table-container">
+                    <?php if ($users_summary->num_rows > 0): ?>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px; text-align: center;">
+                                        <input type="checkbox" id="selectAllUsers" onclick="toggleAllUsers(this)" style="cursor: pointer;">
+                                    </th>
+                                    <th>ITS</th>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Jamea</th>
+                                    <th>Class.</th>
+                                    <th>Progress</th>
+                                    <th>Qurans</th>
+                                    <th>Juz</th>
+                                    <th>Duas</th>
+                                    <th>Tasb.</th>
+                                    <th>Namaz</th>
+                                    <th>Kutub</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $users_array = [];
+                                while ($user = $users_summary->fetch_assoc()) {
+                                    $users_array[] = $user;
                                 }
-                                $user_category_data[$row['user_id']][$row['category']] = $row['count'];
-                            }
 
-                            // Store all users in an array for potential sorting by overall progress
-                            $users_array = [];
-                            while ($user = $users_summary->fetch_assoc()) {
-                                $users_array[] = $user;
-                            }
+                                // Get target counts for calculations
+                                $sql_targets = "SELECT category, SUM(target_count) as total_target FROM duas_master WHERE is_active = 1 GROUP BY category";
+                                $targets_result = $conn->query($sql_targets);
+                                $category_targets = ['dua' => 0, 'tasbeeh' => 0, 'namaz' => 0];
+                                while ($row = $targets_result->fetch_assoc()) {
+                                    $category_targets[$row['category']] = $row['total_target'];
+                                }
 
-                            // If sorting by progress, calculate overall progress and sort
-                            if ($sort_by === 'progress') {
-                                // Calculate overall progress for each user
-                                foreach ($users_array as $key => $user) {
-                                    $user_cats = isset($user_category_data[$user['user_id']]) ? $user_category_data[$user['user_id']] : ['dua' => 0, 'tasbeeh' => 0, 'namaz' => 0];
-                                    
-                                    // Calculate individual progress metrics
-                                    $quran_progress = round(($user['completed_juz'] / 120) * 100, 2);
-                                    
-                                    // Calculate dua category progress
-                                    $dua_progress = $category_targets['dua'] > 0 ? round(($user_cats['dua'] / $category_targets['dua']) * 100, 2) : 0;
-                                    $tasbeeh_progress = $category_targets['tasbeeh'] > 0 ? round(($user_cats['tasbeeh'] / $category_targets['tasbeeh']) * 100, 2) : 0;
-                                    $namaz_progress = $category_targets['namaz'] > 0 ? round(($user_cats['namaz'] / $category_targets['namaz']) * 100, 2) : 0;
-                                    
-                                    // Calculate overall progress
-                                    $users_array[$key]['calculated_progress'] = round(($quran_progress + $dua_progress + $tasbeeh_progress + $namaz_progress) / 4, 2);
+                                // Get user category data
+                                $sql_user_categories = "SELECT u.id as user_id, dm.category, COALESCE(SUM(de.count_added), 0) as count
+                                                        FROM users u CROSS JOIN duas_master dm
+                                                        LEFT JOIN dua_entries de ON u.id = de.user_id AND dm.id = de.dua_id
+                                                        WHERE dm.is_active = 1" . $category_filter_sql . $classification_filter_sql . "
+                                                        GROUP BY u.id, dm.category";
+                                
+                                if (!empty($category_filter_params)) {
+                                    $uc_stmt = $conn->prepare($sql_user_categories);
+                                    $uc_stmt->bind_param(str_repeat('s', count($category_filter_params)), ...$category_filter_params);
+                                    $uc_stmt->execute();
+                                    $uc_result = $uc_stmt->get_result();
+                                } else {
+                                    $uc_result = $conn->query($sql_user_categories);
                                 }
                                 
-                                // Sort by calculated progress
-                                usort($users_array, function($a, $b) use ($sort_order) {
-                                    if ($sort_order === 'asc') {
-                                        return $a['calculated_progress'] <=> $b['calculated_progress'];
-                                    } else {
-                                        return $b['calculated_progress'] <=> $a['calculated_progress'];
-                                    }
-                                });
-                            }
-
-                            foreach ($users_array as $user):
-                                if ($search_name && stripos($user['name'], $search_name) === false && stripos($user['its_number'], $search_name) === false) {
-                                    continue;
+                                $user_category_data = [];
+                                while($row = $uc_result->fetch_assoc()) {
+                                    $user_category_data[$row['user_id']][$row['category']] = $row['count'];
                                 }
-                                $user_cats = isset($user_category_data[$user['user_id']]) ? $user_category_data[$user['user_id']] : ['dua' => 0, 'tasbeeh' => 0, 'namaz' => 0];
-                            ?>
-                                <?php
-                                // Calculate individual progress metrics
-                                $quran_progress = round(($user['completed_juz'] / 120) * 100, 2);
-                                $juz_progress = round(($user['completed_juz'] / 120) * 100, 2);
 
-                                // Calculate dua category progress
-                                $dua_progress = $category_targets['dua'] > 0 ? round(($user_cats['dua'] / $category_targets['dua']) * 100, 2) : 0;
-                                $tasbeeh_progress = $category_targets['tasbeeh'] > 0 ? round(($user_cats['tasbeeh'] / $category_targets['tasbeeh']) * 100, 2) : 0;
-                                $namaz_progress = $category_targets['namaz'] > 0 ? round(($user_cats['namaz'] / $category_targets['namaz']) * 100, 2) : 0;
-
-                                // Calculate overall progress (average of Quran, Dua, Tasbeeh, Namaz - excluding Kutub as requested)
-                                $overall_progress = round(($quran_progress + $dua_progress + $tasbeeh_progress + $namaz_progress) / 4, 2);
+                                foreach ($users_array as $user):
+                                    $user_cats = isset($user_category_data[$user['user_id']]) ? $user_category_data[$user['user_id']] : ['dua' => 0, 'tasbeeh' => 0, 'namaz' => 0];
+                                    $quran_pct = round(($user['completed_juz'] / 120) * 100, 2);
+                                    $dua_pct = $category_targets['dua'] > 0 ? round(($user_cats['dua'] / $category_targets['dua']) * 100, 2) : 0;
+                                    $tasbeeh_pct = $category_targets['tasbeeh'] > 0 ? round(($user_cats['tasbeeh'] / $category_targets['tasbeeh']) * 100, 2) : 0;
+                                    $namaz_pct = $category_targets['namaz'] > 0 ? round(($user_cats['namaz'] / $category_targets['namaz']) * 100, 2) : 0;
+                                    $overall_progress = round(($quran_pct + $dua_pct + $tasbeeh_pct + $namaz_pct) / 4, 2);
                                 ?>
-                                <tr style="font-size: 0.8rem;">
-                                    <td style="padding: 0.4rem;"><?php echo htmlspecialchars($user['its_number']); ?></td>
-                                    <td style="padding: 0.4rem; white-space: nowrap;"><strong><?php echo htmlspecialchars($user['name']); ?></strong></td>
-                                    <td style="padding: 0.4rem; font-size: 0.75rem; line-height: 1.3;">
-                                        <?php if ($user['email']): ?>
-                                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;" title="<?php echo htmlspecialchars($user['email']); ?>">
-                                                <i class="fas fa-envelope" style="font-size: 0.7rem;"></i> <?php echo htmlspecialchars($user['email']); ?>
-                                            </div>
-                                        <?php endif; ?>
-                                        <?php if ($user['phone_number']): ?>
-                                            <div style="white-space: nowrap;">
-                                                <i class="fas fa-phone" style="font-size: 0.7rem;"></i> <?php echo htmlspecialchars($user['phone_number']); ?>
-                                            </div>
-                                        <?php endif; ?>
-                                        <?php if (!$user['email'] && !$user['phone_number']): ?>
-                                            <span style="color: var(--text-secondary);">-</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td style="padding: 0.4rem;"><?php echo htmlspecialchars($user['category'] ?? '-'); ?></td>
-                                    <td style="padding: 0.4rem;"><?php echo htmlspecialchars($user['classification'] ?? '-'); ?></td>
-                                    <td style="padding: 0.4rem;">
-                                        <div style="min-width: 100px;">
-                                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 0.75rem;">
-                                                <span style="font-weight: bold;"><?php echo $overall_progress; ?>%</span>
-                                            </div>
-                                            <div class="progress-bar" style="height: 14px;">
-                                                <div class="progress-fill" style="width: <?php echo min($overall_progress, 100); ?>%; height: 14px; font-size: 9px; line-height: 14px;">
-                                                    <?php if ($overall_progress >= 25): ?><?php echo $overall_progress; ?>%<?php endif; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="padding: 0.4rem;">
-                                        <div style="min-width: 70px;">
-                                            <div style="font-size: 0.75rem; margin-bottom: 1px;">
-                                                <strong><?php echo $user['completed_qurans']; ?></strong>/4
-                                            </div>
-                                            <div class="progress-bar" style="height: 6px;">
-                                                <div class="progress-fill" style="width: <?php echo $quran_progress; ?>%; height: 6px;"></div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="padding: 0.4rem;">
-                                        <div style="min-width: 70px;">
-                                            <div style="font-size: 0.75rem; margin-bottom: 1px;">
-                                                <?php echo $user['completed_juz']; ?>/120
-                                            </div>
-                                            <div class="progress-bar" style="height: 6px;">
-                                                <div class="progress-fill" style="width: <?php echo $juz_progress; ?>%; height: 6px;"></div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="padding: 0.4rem; text-align: center;"><strong><?php echo $user_cats['dua']; ?></strong></td>
-                                    <td style="padding: 0.4rem; text-align: center;"><strong><?php echo $user_cats['tasbeeh']; ?></strong></td>
-                                    <td style="padding: 0.4rem; text-align: center;"><strong><?php echo $user_cats['namaz']; ?></strong></td>
-                                    <td style="padding: 0.4rem; text-align: center; white-space: nowrap;">
-                                        <strong><?php echo $user['books_completed']; ?></strong>/<?php echo $user['books_in_progress']; ?>
-                                    </td>
-                                    <td style="padding: 0.4rem; text-align: center;">
-                                        <a href="edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-sm btn-primary" title="Edit User" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php else: ?>
-                    <p class="text-center">No users found.</p>
-                <?php endif; ?>
+                                    <tr>
+                                        <td style="text-align: center;">
+                                            <input type="checkbox" class="user-checkbox" value="<?php echo $user['user_id']; ?>" onchange="updateBulkUI()" style="cursor: pointer;">
+                                        </td>
+                                        <td><?php echo htmlspecialchars($user['its_number']); ?></td>
+                                        <td><strong><?php echo htmlspecialchars($user['name']); ?></strong></td>
+                                        <td><small><?php echo htmlspecialchars($user['phone_number'] ?: '-'); ?></small></td>
+                                        <td><?php echo htmlspecialchars($user['category'] ?? '-'); ?></td>
+                                        <td><?php echo htmlspecialchars($user['classification'] ?? '-'); ?></td>
+                                        <td><strong><?php echo $overall_progress; ?>%</strong></td>
+                                        <td><?php echo $user['completed_qurans']; ?></td>
+                                        <td><?php echo $user['completed_juz']; ?></td>
+                                        <td><?php echo $user_cats['dua']; ?></td>
+                                        <td><?php echo $user_cats['tasbeeh']; ?></td>
+                                        <td><?php echo $user_cats['namaz']; ?></td>
+                                        <td><?php echo $user['books_completed']; ?></td>
+                                        <td>
+                                            <a href="edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php else: ?>
+                        <p class="text-center" style="padding: 2rem;">No users found.</p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="mobile-report-cards" style="padding: 1rem;">
+                    <?php foreach ($users_array as $user): 
+                        $user_cats = isset($user_category_data[$user['user_id']]) ? $user_category_data[$user['user_id']] : ['dua' => 0, 'tasbeeh' => 0, 'namaz' => 0];
+                        $quran_pct = round(($user['completed_juz'] / 120) * 100, 2);
+                        $dua_pct = $category_targets['dua'] > 0 ? round(($user_cats['dua'] / $category_targets['dua']) * 100, 2) : 0;
+                        $tasbeeh_pct = $category_targets['tasbeeh'] > 0 ? round(($user_cats['tasbeeh'] / $category_targets['tasbeeh']) * 100, 2) : 0;
+                        $namaz_pct = $category_targets['namaz'] > 0 ? round(($user_cats['namaz'] / $category_targets['namaz']) * 100, 2) : 0;
+                        $overall_progress = round(($quran_pct + $dua_pct + $tasbeeh_pct + $namaz_pct) / 4, 2);
+                    ?>
+                        <div class="report-card">
+                            <div class="report-card-header" style="position: relative;">
+                                <div style="position: absolute; left: 0; top: 0;">
+                                    <input type="checkbox" class="user-checkbox" value="<?php echo $user['user_id']; ?>" onchange="updateBulkUI()" style="width: 20px; height: 20px;">
+                                </div>
+                                <div style="margin-left: 30px;">
+                                    <div class="report-card-title"><?php echo htmlspecialchars($user['name']); ?></div>
+                                    <div class="report-card-subtitle">ITS: <?php echo htmlspecialchars($user['its_number']); ?> | <?php echo htmlspecialchars($user['category'] ?: 'N/A'); ?></div>
+                                </div>
+                                <div class="badge badge-primary"><?php echo $overall_progress; ?>%</div>
+                            </div>
+                            <div class="report-card-grid">
+                                <div class="report-data-item">
+                                    <span class="report-data-label">Quran</span>
+                                    <span class="report-data-value"><?php echo $user['completed_qurans']; ?> (<?php echo $user['completed_juz']; ?> Juz)</span>
+                                </div>
+                                <div class="report-data-item">
+                                    <span class="report-data-label">Duas</span>
+                                    <span class="report-data-value"><?php echo $user_cats['dua']; ?> recited</span>
+                                </div>
+                                <div class="report-data-item">
+                                    <span class="report-data-label">Tasbeeh</span>
+                                    <span class="report-data-value"><?php echo $user_cats['tasbeeh']; ?> count</span>
+                                </div>
+                                <div class="report-data-item">
+                                    <span class="report-data-label">Kutub</span>
+                                    <span class="report-data-value"><?php echo $user['books_completed']; ?> done</span>
+                                </div>
+                                <div class="report-card-full">
+                                    <a href="edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-primary w-100" style="padding: 0.75rem;">
+                                        <i class="fas fa-user-edit"></i> View & Edit Profile
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
 
@@ -713,7 +694,7 @@ require_once '../includes/header.php';
                     END as status
                 FROM users u
                 LEFT JOIN quran_progress qp ON u.id = qp.user_id
-                WHERE u.role = 'user'";
+                WHERE u.role = 'user' OR u.role = 'admin'"; // Include admins
 
         $params = [];
         $types = '';
@@ -748,12 +729,15 @@ require_once '../includes/header.php';
         }
         $stmt->execute();
         $quran_report = $stmt->get_result();
+        $quran_array = [];
+        while ($row = $quran_report->fetch_assoc()) { $quran_array[] = $row; }
         ?>
 
         <div class="card">
             <div class="card-header">
                 <h3><i class="fas fa-filter"></i> Filter Options</h3>
             </div>
+            <!-- ... [Form remains the same] ... -->
             <form method="GET" action="" style="padding: var(--spacing-lg);">
                 <input type="hidden" name="report_type" value="quran">
                 <div class="form-group" style="margin-bottom: var(--spacing-md);">
@@ -808,51 +792,74 @@ require_once '../includes/header.php';
             <div class="card-header">
                 <h3><i class="fas fa-quran"></i> Quran Completion Report</h3>
             </div>
-            <div class="table-container">
-                <?php if ($quran_report->num_rows > 0): ?>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ITS Number</th>
-                                <th>Name</th>
-                                <th>Jamea</th>
-                                <th>Classification</th>
-                                <th>Quran #</th>
-                                <th>Completed Juz</th>
-                                <th>Progress</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($row = $quran_report->fetch_assoc()): ?>
+            <div class="report-wrapper">
+                <div class="table-container">
+                    <?php if (!empty($quran_array)): ?>
+                        <table>
+                            <thead>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($row['its_number']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['name']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['category'] ?? '-'); ?></td>
-                                    <td><?php echo htmlspecialchars($row['classification'] ?? '-'); ?></td>
-                                    <td><strong>Quran <?php echo $row['quran_number']; ?></strong></td>
-                                    <td><?php echo $row['completed_juz_in_quran']; ?> / 30</td>
-                                    <td>
-                                        <div class="progress-bar" style="height: 20px;">
-                                            <div class="progress-fill" style="width: <?php echo $row['quran_percentage']; ?>%; height: 20px; font-size: 12px;">
-                                                <?php echo $row['quran_percentage']; ?>%
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <?php if ($row['status'] === 'Completed'): ?>
-                                            <span class="badge badge-success"><?php echo $row['status']; ?></span>
-                                        <?php else: ?>
-                                            <span class="badge badge-warning"><?php echo $row['status']; ?></span>
-                                        <?php endif; ?>
-                                    </td>
+                                    <th>ITS Number</th>
+                                    <th>Name</th>
+                                    <th>Jamea</th>
+                                    <th>Classification</th>
+                                    <th>Quran #</th>
+                                    <th>Completed Juz</th>
+                                    <th>Progress</th>
+                                    <th>Status</th>
                                 </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                <?php else: ?>
-                    <p class="text-center">No Quran progress found.</p>
-                <?php endif; ?>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($quran_array as $row): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($row['its_number']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['name']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['category'] ?? '-'); ?></td>
+                                        <td><?php echo htmlspecialchars($row['classification'] ?? '-'); ?></td>
+                                        <td><strong>Quran <?php echo $row['quran_number']; ?></strong></td>
+                                        <td><?php echo $row['completed_juz_in_quran']; ?> / 30</td>
+                                        <td><strong><?php echo $row['quran_percentage']; ?>%</strong></td>
+                                        <td><span class="badge badge-<?php echo $row['status'] === 'Completed' ? 'success' : 'warning'; ?>"><?php echo $row['status']; ?></span></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php else: ?>
+                        <p class="text-center" style="padding: 2rem;">No progress found.</p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="mobile-report-cards" style="padding: 1rem;">
+                    <?php foreach ($quran_array as $row): ?>
+                        <div class="report-card">
+                            <div class="report-card-header">
+                                <div>
+                                    <div class="report-card-title"><?php echo htmlspecialchars($row['name']); ?></div>
+                                    <div class="report-card-subtitle">Quran #<?php echo $row['quran_number']; ?> | ITS: <?php echo htmlspecialchars($row['its_number']); ?></div>
+                                </div>
+                                <span class="badge badge-<?php echo $row['status'] === 'Completed' ? 'success' : 'warning'; ?>"><?php echo $row['status']; ?></span>
+                            </div>
+                            <div class="report-card-grid">
+                                <div class="report-data-item">
+                                    <span class="report-data-label">Juz Completed</span>
+                                    <span class="report-data-value"><?php echo $row['completed_juz_in_quran']; ?> / 30</span>
+                                </div>
+                                <div class="report-data-item">
+                                    <span class="report-data-label">Percentage</span>
+                                    <span class="report-data-value"><?php echo $row['quran_percentage']; ?>%</span>
+                                </div>
+                                <div class="report-data-item">
+                                    <span class="report-data-label">Jamea</span>
+                                    <span class="report-data-value"><?php echo htmlspecialchars($row['category'] ?: 'N/A'); ?></span>
+                                </div>
+                                <div class="report-data-item">
+                                    <span class="report-data-label">Class</span>
+                                    <span class="report-data-value"><?php echo htmlspecialchars($row['classification'] ?: 'N/A'); ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
 
@@ -862,70 +869,36 @@ require_once '../includes/header.php';
         // Get all duas for columns
         $duas_list = $conn->query("SELECT id, dua_name, target_count FROM duas_master WHERE is_active = 1 ORDER BY display_order");
         $duas = [];
-        while ($dua = $duas_list->fetch_assoc()) {
-            $duas[] = $dua;
-        }
+        while ($dua = $duas_list->fetch_assoc()) { $duas[] = $dua; }
 
-        // Get user dua data grouped by user with category filter
-        $sql = "SELECT 
-                    u.id as user_id,
-                    u.name,
-                    u.its_number,
-                    u.category,
-                    u.classification,
-                    dm.id as dua_id,
-                    dm.dua_name,
-                    dm.target_count,
+        $sql = "SELECT u.id as user_id, u.name, u.its_number, u.category, u.classification,
+                    dm.id as dua_id, dm.dua_name, dm.target_count,
                     COALESCE(SUM(de.count_added), 0) as total_completed
                 FROM users u
                 CROSS JOIN duas_master dm
                 LEFT JOIN dua_entries de ON u.id = de.user_id AND dm.id = de.dua_id
-                WHERE dm.is_active = 1";
+                WHERE dm.is_active = 1 AND (u.role = 'user' OR u.role = 'admin')";
 
-        $params = [];
-        $types = '';
-
-        if ($filter_category) {
-            $sql .= " AND u.category = ?";
-            $params[] = $filter_category;
-            $types .= 's';
-        }
-
-        if ($filter_classification) {
-            $sql .= " AND u.classification = ?";
-            $params[] = $filter_classification;
-            $types .= 's';
-        }
-
-        if ($search_name) {
-            $sql .= " AND (u.name LIKE ? OR u.its_number LIKE ?)";
-            $search_param = "%$search_name%";
-            $params[] = $search_param;
-            $params[] = $search_param;
-            $types .= 'ss';
-        }
+        $params = []; $types = '';
+        if ($filter_category) { $sql .= " AND u.category = ?"; $params[] = $filter_category; $types .= 's'; }
+        if ($filter_classification) { $sql .= " AND u.classification = ?"; $params[] = $filter_classification; $types .= 's'; }
+        if ($search_name) { $sql .= " AND (u.name LIKE ? OR u.its_number LIKE ?)"; $search_param = "%$search_name%"; $params[] = $search_param; $params[] = $search_param; $types .= 'ss'; }
 
         $sql .= " GROUP BY u.id, u.name, u.its_number, u.category, u.classification, dm.id, dm.dua_name, dm.target_count
                   ORDER BY u.name, dm.display_order";
 
         $stmt = $conn->prepare($sql);
-        if (!empty($params)) {
-            $stmt->bind_param($types, ...$params);
-        }
+        if (!empty($params)) { $stmt->bind_param($types, ...$params); }
         $stmt->execute();
         $result = $stmt->get_result();
 
-        // Organize data by user
         $user_dua_data = [];
         while ($row = $result->fetch_assoc()) {
             $user_id = $row['user_id'];
             if (!isset($user_dua_data[$user_id])) {
                 $user_dua_data[$user_id] = [
-                    'its_number' => $row['its_number'],
-                    'name' => $row['name'],
-                    'category' => $row['category'],
-                    'classification' => $row['classification'],
-                    'duas' => []
+                    'its_number' => $row['its_number'], 'name' => $row['name'],
+                    'category' => $row['category'], 'classification' => $row['classification'], 'duas' => []
                 ];
             }
             $user_dua_data[$user_id]['duas'][$row['dua_id']] = $row['total_completed'];
@@ -936,6 +909,7 @@ require_once '../includes/header.php';
             <div class="card-header">
                 <h3><i class="fas fa-filter"></i> Filter Options</h3>
             </div>
+            <!-- ... [Filter Form] ... -->
             <form method="GET" action="" style="padding: var(--spacing-lg);">
                 <input type="hidden" name="report_type" value="dua">
                 <div class="form-group" style="margin-bottom: var(--spacing-md);">
@@ -990,110 +964,106 @@ require_once '../includes/header.php';
             <div class="card-header">
                 <h3><i class="fas fa-hands-praying"></i> Dua Recitation Report</h3>
             </div>
-            <div class="table-container">
-                <?php if (!empty($user_dua_data)): ?>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ITS Number</th>
-                                <th>Name</th>
-                                <th>Jamea</th>
-                                <th>Classification</th>
-                                 <?php foreach ($duas as $dua): 
-                                     // Clean dua name by removing suffix like "(100 Dana ni Tasbeeh = 1 Time"
-                                     $clean_dua_name = preg_replace('/\s*\([^)]*\)\s*$/', '', $dua['dua_name']);
-                                 ?>
-                                    <th><?php echo htmlspecialchars($clean_dua_name); ?><br><small>(Target: <?php echo $dua['target_count']; ?>)</small></th>
-                                 <?php endforeach; ?>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($user_dua_data as $user): ?>
+            <div class="report-wrapper">
+                <div class="table-container">
+                    <?php if (!empty($user_dua_data)): ?>
+                        <table>
+                            <thead>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($user['its_number']); ?></td>
-                                    <td><?php echo htmlspecialchars($user['name']); ?></td>
-                                    <td><?php echo htmlspecialchars($user['category'] ?? '-'); ?></td>
-                                    <td><?php echo htmlspecialchars($user['classification'] ?? '-'); ?></td>
-                                    <?php foreach ($duas as $dua): ?>
-                                        <td>
-                                            <strong><?php echo isset($user['duas'][$dua['id']]) ? $user['duas'][$dua['id']] : 0; ?></strong>
-                                        </td>
-                                    <?php endforeach; ?>
+                                    <th>ITS Number</th>
+                                    <th>Name</th>
+                                    <th>Jamea</th>
+                                    <th>Classification</th>
+                                     <?php foreach ($duas as $dua): 
+                                         $clean_dua_name = preg_replace('/\s*\([^)]*\)\s*$/', '', $dua['dua_name']);
+                                     ?>
+                                        <th><?php echo htmlspecialchars($clean_dua_name); ?><br><small>(Target: <?php echo $dua['target_count']; ?>)</small></th>
+                                     <?php endforeach; ?>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php else: ?>
-                    <p class="text-center">No users found.</p>
-                <?php endif; ?>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($user_dua_data as $user): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($user['its_number']); ?></td>
+                                        <td><?php echo htmlspecialchars($user['name']); ?></td>
+                                        <td><?php echo htmlspecialchars($user['category'] ?? '-'); ?></td>
+                                        <td><?php echo htmlspecialchars($user['classification'] ?? '-'); ?></td>
+                                        <?php foreach ($duas as $dua): ?>
+                                            <td><strong><?php echo isset($user['duas'][$dua['id']]) ? $user['duas'][$dua['id']] : 0; ?></strong></td>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php else: ?>
+                        <p class="text-center" style="padding: 2rem;">No users found.</p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="mobile-report-cards" style="padding: 1rem;">
+                    <?php foreach ($user_dua_data as $user): ?>
+                        <div class="report-card">
+                            <div class="report-card-header">
+                                <div>
+                                    <div class="report-card-title"><?php echo htmlspecialchars($user['name']); ?></div>
+                                    <div class="report-card-subtitle">ITS: <?php echo htmlspecialchars($user['its_number']); ?> | <?php echo htmlspecialchars($user['category'] ?: 'N/A'); ?></div>
+                                </div>
+                            </div>
+                            <div class="report-card-grid" style="grid-template-columns: 1fr;">
+                                <?php foreach ($duas as $dua): 
+                                    $count = isset($user['duas'][$dua['id']]) ? $user['duas'][$dua['id']] : 0;
+                                    if($count > 0): // Only show active progress on mobile cards to save space
+                                ?>
+                                    <div class="report-data-item" style="flex-direction: row; justify-content: space-between; align-items: center; border-bottom: 1px solid #f8f9fa; padding: 4px 0;">
+                                        <span class="report-data-label" style="margin: 0;"><?php echo htmlspecialchars($dua['dua_name']); ?></span>
+                                        <span class="report-data-value"><?php echo $count; ?> / <?php echo $dua['target_count']; ?></span>
+                                    </div>
+                                <?php endif; endforeach; ?>
+                                <?php if(empty(array_filter($user['duas']))): ?>
+                                    <div class="text-center text-muted" style="font-size: 0.8rem; padding: 1rem;">No recitation data recorded yet.</div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
 
     <?php elseif ($report_type === 'books'): ?>
         <!-- Books Report -->
         <?php
-        // Get all books for filter
         $books_list = $conn->query("SELECT id, book_name FROM books_master WHERE is_active = 1 ORDER BY display_order");
-
-        // Build books report query with category filter
         $sql = "SELECT u.id, u.name, u.its_number, u.category, u.classification,
                     bm.id as book_id, bm.book_name, bm.author, bm.total_pages,
                     bt.status, bt.pages_completed, bt.started_date, bt.completed_date,
-                    CASE 
-                        WHEN bm.total_pages > 0 THEN ROUND((bt.pages_completed / bm.total_pages) * 100, 2)
-                        ELSE 0
-                    END as progress_percentage
+                    CASE WHEN bm.total_pages > 0 THEN ROUND((bt.pages_completed / bm.total_pages) * 100, 2) ELSE 0 END as progress_percentage
                 FROM users u
                 LEFT JOIN book_transcription bt ON u.id = bt.user_id
                 LEFT JOIN books_master bm ON bt.book_id = bm.id
-                WHERE bt.status IN ('selected', 'completed')";
+                WHERE bt.status IN ('selected', 'completed') AND (u.role = 'user' OR u.role = 'admin')";
 
-        $params = [];
-        $types = '';
-
-        if ($filter_category) {
-            $sql .= " AND u.category = ?";
-            $params[] = $filter_category;
-            $types .= 's';
-        }
-
-        if ($filter_classification) {
-            $sql .= " AND u.classification = ?";
-            $params[] = $filter_classification;
-            $types .= 's';
-        }
-
-        if ($search_name) {
-            $sql .= " AND (u.name LIKE ? OR u.its_number LIKE ?)";
-            $search_param = "%$search_name%";
-            $params[] = $search_param;
-            $params[] = $search_param;
-            $types .= 'ss';
-        }
-        if ($filter_book) {
-            $sql .= " AND bt.book_id = ?";
-            $params[] = $filter_book;
-            $types .= 'i';
-        }
-        if ($filter_status) {
-            $sql .= " AND bt.status = ?";
-            $params[] = $filter_status;
-            $types .= 's';
-        }
+        $params = []; $types = '';
+        if ($filter_category) { $sql .= " AND u.category = ?"; $params[] = $filter_category; $types .= 's'; }
+        if ($filter_classification) { $sql .= " AND u.classification = ?"; $params[] = $filter_classification; $types .= 's'; }
+        if ($search_name) { $sql .= " AND (u.name LIKE ? OR u.its_number LIKE ?)"; $search_param = "%$search_name%"; $params[] = $search_param; $params[] = $search_param; $types .= 'ss'; }
+        if ($filter_book) { $sql .= " AND bt.book_id = ?"; $params[] = $filter_book; $types .= 'i'; }
+        if ($filter_status) { $sql .= " AND bt.status = ?"; $params[] = $filter_status; $types .= 's'; }
+        
         $sql .= " ORDER BY u.name, bm.book_name";
-
         $stmt = $conn->prepare($sql);
-        if (!empty($params)) {
-            $stmt->bind_param($types, ...$params);
-        }
+        if (!empty($params)) { $stmt->bind_param($types, ...$params); }
         $stmt->execute();
         $book_report = $stmt->get_result();
+        $book_array = [];
+        while ($row = $book_report->fetch_assoc()) { $book_array[] = $row; }
         ?>
 
         <div class="card">
             <div class="card-header">
                 <h3><i class="fas fa-filter"></i> Filter Books Report</h3>
             </div>
+            <!-- ... [Filter Form] ... -->
             <form method="GET" action="" style="padding: var(--spacing-lg);">
                 <input type="hidden" name="report_type" value="books">
                 <div class="form-group">
@@ -1167,70 +1137,76 @@ require_once '../includes/header.php';
             <div class="card-header">
                 <h3><i class="fas fa-book"></i> Book Transcription Report</h3>
             </div>
-            <div class="table-container">
-                <?php if ($book_report->num_rows > 0): ?>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ITS Number</th>
-                                <th>Name</th>
-                                <th>Jamea</th>
-                                <th>Classification</th>
-                                <th>Book Name</th>
-                                <th>Author</th>
-                                <th>Total Pages</th>
-                                <th>Pages Completed</th>
-                                <th>Progress</th>
-                                <th>Status</th>
-                                <th>Started Date</th>
-                                <th>Completed Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($row = $book_report->fetch_assoc()): ?>
-                                <?php
-                                $pages_completed = $row['pages_completed'] ?? 0;
-                                $total_pages = $row['total_pages'] ?? 0;
-                                $progress_percentage = $row['progress_percentage'] ?? 0;
-                                ?>
+            <div class="report-wrapper">
+                <div class="table-container">
+                    <?php if (!empty($book_array)): ?>
+                        <table>
+                            <thead>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($row['its_number']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['name']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['category'] ?? '-'); ?></td>
-                                    <td><?php echo htmlspecialchars($row['classification'] ?? '-'); ?></td>
-                                    <td><?php echo htmlspecialchars($row['book_name']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['author']); ?></td>
-                                    <td><?php echo $total_pages; ?></td>
-                                    <td><strong><?php echo $pages_completed; ?></strong></td>
-                                    <td>
-                                        <div style="min-width: 120px;">
-                                            <div style="font-size: 12px; margin-bottom: 4px;"><?php echo $progress_percentage; ?>%</div>
-                                            <div class="progress-bar" style="height: 12px;">
-                                                <div class="progress-fill" style="width: <?php echo $progress_percentage; ?>%; height: 12px;"></div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <?php if ($row['status'] === 'completed'): ?>
-                                            <span class="badge badge-success">Completed</span>
-                                        <?php elseif ($row['status'] === 'selected'): ?>
-                                            <span class="badge badge-warning">In Progress</span>
-                                        <?php else: ?>
-                                            <span class="badge badge-secondary">Not Selected</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><?php echo $row['started_date'] ? date('M d, Y', strtotime($row['started_date'])) : '-'; ?></td>
-                                    <td><?php echo $row['completed_date'] ? date('M d, Y', strtotime($row['completed_date'])) : '-'; ?></td>
+                                    <th>ITS Number</th>
+                                    <th>Name</th>
+                                    <th>Jamea</th>
+                                    <th>Classification</th>
+                                    <th>Book Name</th>
+                                    <th>Pages</th>
+                                    <th>Progress</th>
+                                    <th>Status</th>
                                 </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                <?php else: ?>
-                    <p class="text-center">No book transcription data found.</p>
-                <?php endif; ?>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($book_array as $row): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($row['its_number']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['name']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['category'] ?? '-'); ?></td>
+                                        <td><?php echo htmlspecialchars($row['classification'] ?? '-'); ?></td>
+                                        <td><?php echo htmlspecialchars($row['book_name']); ?></td>
+                                        <td><?php echo $row['pages_completed']; ?> / <?php echo $row['total_pages']; ?></td>
+                                        <td><strong><?php echo $row['progress_percentage']; ?>%</strong></td>
+                                        <td><span class="badge badge-<?php echo $row['status'] === 'completed' ? 'success' : 'warning'; ?>"><?php echo ucfirst($row['status']); ?></span></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php else: ?>
+                        <p class="text-center" style="padding: 2rem;">No data found.</p>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="mobile-report-cards" style="padding: 1rem;">
+                    <?php foreach ($book_array as $row): ?>
+                        <div class="report-card">
+                            <div class="report-card-header">
+                                <div>
+                                    <div class="report-card-title"><?php echo htmlspecialchars($row['name']); ?></div>
+                                    <div class="report-card-subtitle"><?php echo htmlspecialchars($row['book_name']); ?> | ITS: <?php echo htmlspecialchars($row['its_number']); ?></div>
+                                </div>
+                                <span class="badge badge-<?php echo $row['status'] === 'completed' ? 'success' : 'warning'; ?>"><?php echo ucfirst($row['status']); ?></span>
+                            </div>
+                            <div class="report-card-grid">
+                                <div class="report-data-item">
+                                    <span class="report-data-label">Pages Done</span>
+                                    <span class="report-data-value"><?php echo $row['pages_completed']; ?> / <?php echo $row['total_pages']; ?></span>
+                                </div>
+                                <div class="report-data-item">
+                                    <span class="report-data-label">Percentage</span>
+                                    <span class="report-data-value"><?php echo $row['progress_percentage']; ?>%</span>
+                                </div>
+                                <div class="report-data-item">
+                                    <span class="report-data-label">Started Date</span>
+                                    <span class="report-data-value"><?php echo $row['started_date'] ? date('M d, Y', strtotime($row['started_date'])) : '-'; ?></span>
+                                </div>
+                                <div class="report-data-item">
+                                    <span class="report-data-label">Jamea</span>
+                                    <span class="report-data-value"><?php echo htmlspecialchars($row['category'] ?: 'N/A'); ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
-
     <?php endif; ?>
 
     <!-- Export Options -->
@@ -1245,5 +1221,79 @@ require_once '../includes/header.php';
         </div>
     </div>
 </div>
+
+<script>
+    function toggleAllUsers(source) {
+        const checkboxes = document.querySelectorAll('.user-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = source.checked;
+        });
+        updateBulkUI();
+    }
+
+    function updateBulkUI() {
+        const selected = document.querySelectorAll('.user-checkbox:checked');
+        const countSpan = document.getElementById('selectedCount');
+        const submitBtn = document.getElementById('bulkSubmitBtn');
+        
+        if (selected.length > 0) {
+            submitBtn.disabled = false;
+            countSpan.innerText = selected.length;
+        } else {
+            submitBtn.disabled = true;
+            countSpan.innerText = "0";
+            document.getElementById('selectAllUsers').checked = false;
+        }
+    }
+
+    function clearBulkSelection() {
+        document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+        document.getElementById('selectAllUsers').checked = false;
+        updateBulkUI();
+    }
+
+    async function submitBulkAmali() {
+        const duaId = document.getElementById('bulk_dua_id').value;
+        const count = document.getElementById('bulk_count').value;
+        const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+        
+        if (!duaId) return showToast('Please select an Amali item.', 'error');
+        if (!count || count <= 0) return showToast('Please enter a valid count.', 'error');
+        
+        const userIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        
+        const btn = document.getElementById('bulkSubmitBtn');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+        try {
+            const response = await fetch('ajax_bulk_amali.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_ids: userIds,
+                    dua_id: duaId,
+                    count: count
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(result.message, 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast(result.message || 'An error occurred', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        } catch (error) {
+            showToast('Failed to connect to the server.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+</script>
 
 <?php require_once '../includes/footer.php'; ?>

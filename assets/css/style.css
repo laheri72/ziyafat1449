@@ -1127,11 +1127,24 @@ textarea.form-control {
 
 @media (max-width: 768px) {
     :root {
-        --sidebar-width: 100%;
+        --sidebar-width: 280px; /* Don't make it 100% so overlay is visible */
+        --spacing-xl: 1rem;
+        --spacing-2xl: 1.5rem;
     }
     
+    .sidebar {
+        width: 85%;
+        max-width: 300px;
+    }
+
     .stats-grid {
         grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .stat-card {
+        min-width: 0; /* Allow it to shrink below 280px */
+        padding: var(--spacing-lg);
     }
     
     .user-info-grid {
@@ -1149,6 +1162,11 @@ textarea.form-control {
     .page-header h1 {
         font-size: 1.5rem;
     }
+
+    .page-header p {
+        margin-left: 0;
+        font-size: 0.85rem;
+    }
     
     .action-buttons {
         flex-direction: column;
@@ -1160,6 +1178,13 @@ textarea.form-control {
         width: 100%;
     }
     
+    .card-header {
+        padding: var(--spacing-md);
+        flex-direction: row; /* Keep it row but allow wrapping if needed */
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
     .card-header > div {
         flex-direction: column;
         align-items: flex-start !important;
@@ -1167,21 +1192,30 @@ textarea.form-control {
     
     table {
         font-size: 0.8rem;
+        min-width: 500px; /* Allow smaller tables */
     }
     
     table th,
     table td {
         padding: var(--spacing-sm) var(--spacing-md);
     }
-    
-    table td:first-child,
-    table th:first-child {
-        padding-left: var(--spacing-md);
+}
+
+@media (max-width: 480px) {
+    :root {
+        --sidebar-width: 260px;
     }
-    
-    table td:last-child,
-    table th:last-child {
-        padding-right: var(--spacing-md);
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.25rem;
+    }
+
+    .card > *:not(.card-header):not(.table-container):not(.stats-grid) {
+        padding: var(--spacing-md);
     }
 }
 
