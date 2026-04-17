@@ -16,6 +16,9 @@ $js_path = '../assets/js/';
 $success = '';
 $error = '';
 
+// Normalize legacy virtual bulk accounts to system scope.
+$conn->query("UPDATE users SET role = 'system', category = 'system' WHERE its_number LIKE '000000%'");
+
 // 1. Ensure Collective User exists
 $bulk_its = '00000000';
 $check_sql = "SELECT id FROM users WHERE its_number = ?";
@@ -25,13 +28,18 @@ $stmt->execute();
 $res = $stmt->get_result();
 
 if ($res->num_rows === 0) {
-    $ins_sql = "INSERT INTO users (its_number, name, role, category, password, email) VALUES (?, 'Collective Bulk Entries', 'system', 'System', 'nopassword', 'bulk@system.local')";
+    $ins_sql = "INSERT INTO users (its_number, name, role, category, password, email) VALUES (?, 'Collective Bulk Entries', 'system', 'system', 'nopassword', 'bulk@system.local')";
     $ins_stmt = $conn->prepare($ins_sql);
     $ins_stmt->bind_param("s", $bulk_its);
     $ins_stmt->execute();
     $bulk_user_id = $conn->insert_id;
 } else {
     $bulk_user_id = $res->fetch_assoc()['id'];
+    // Normalize legacy bulk account metadata for consistent role-based reporting.
+    $fix_sql = "UPDATE users SET role = 'system', category = 'system' WHERE id = ?";
+    $fix_stmt = $conn->prepare($fix_sql);
+    $fix_stmt->bind_param("i", $bulk_user_id);
+    $fix_stmt->execute();
 }
 
 // Handle Form Submission
@@ -58,10 +66,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $u_check = $conn->query("SELECT id FROM users WHERE its_number = '$v_its'");
                     if ($u_check->num_rows === 0) {
                         $conn->query("INSERT INTO users (its_number, name, role, category, password, email) 
-                                     VALUES ('$v_its', 'Bulk Storage $v', 'system', 'System', 'nopassword', 'bulk$v@system.local')");
+                                     VALUES ('$v_its', 'Bulk Storage $v', 'system', 'system', 'nopassword', 'bulk$v@system.local')");
                         $v_user_id = $conn->insert_id;
                     } else {
                         $v_user_id = $u_check->fetch_assoc()['id'];
+                        $conn->query("UPDATE users SET role = 'system', category = 'system' WHERE id = $v_user_id");
                     }
                     
                     // Fill this user's 4 Qurans (120 Juz)

@@ -195,16 +195,25 @@ require_once '../includes/header.php';
             $users_summary = $conn->query($sql);
         }
 
-        // Logic: For total counts, include role='system' but handle category filter properly
-        // Community users are filtered by branch, but System users (bulk storage) are always included in totals
-        $where_clause = "(((u.role = 'user' OR u.role = 'admin') AND u.its_number NOT LIKE '000000%'";
+        // Scope rules:
+        // 1) Community scope always includes user/admin participants only.
+        // 2) System bulk storage is included only in true global (unfiltered) summary.
+        $safe_filter_category = $conn->real_escape_string($filter_category);
+        $safe_filter_classification = $conn->real_escape_string($filter_classification);
+
+        $community_scope_clause = "((u.role = 'user' OR u.role = 'admin') AND u.its_number NOT LIKE '000000%'";
         if ($filter_category) {
-            $where_clause .= " AND u.category = '$filter_category'";
+            $community_scope_clause .= " AND u.category = '$safe_filter_category'";
         }
         if ($filter_classification) {
-            $where_clause .= " AND u.classification = '$filter_classification'";
+            $community_scope_clause .= " AND u.classification = '$safe_filter_classification'";
         }
-        $where_clause .= ") OR (u.role = 'system'))";
+        $community_scope_clause .= ")";
+
+        $include_system_bulk = empty($filter_category) && empty($filter_classification);
+        $where_clause = $include_system_bulk
+            ? "($community_scope_clause OR u.role = 'system' OR u.category = 'system')"
+            : $community_scope_clause;
 
         $sql = "SELECT 
                     COUNT(DISTINCT CASE WHEN (u.role = 'user' OR u.role = 'admin') AND u.its_number NOT LIKE '000000%' THEN u.id END) as total_users,
@@ -218,39 +227,38 @@ require_once '../includes/header.php';
 
         $overall_stats = $conn->query($sql)->fetch_assoc();
 
-        // Get category-wise dua counts with user category filter
-        $where_conditions = [];
-        $filter_params = [];
-        if ($filter_category) {
-            $where_conditions[] = "u.category = ?";
-            $filter_params[] = $filter_category;
-        }
-        if ($filter_classification) {
-            $where_conditions[] = "u.classification = ?";
-            $filter_params[] = $filter_classification;
-        }
-
+        // Keep category totals in same scope as overall summary to avoid dashboard/report drift.
         $sql_categories = "SELECT 
                             dm.category,
                             COALESCE(SUM(de.count_added), 0) as total_count
                         FROM duas_master dm
                         LEFT JOIN dua_entries de ON dm.id = de.dua_id
                         LEFT JOIN users u ON de.user_id = u.id
-                        WHERE dm.is_active = 1" . (!empty($where_conditions) ? " AND " . implode(" AND ", $where_conditions) : "") . "
+                        WHERE dm.is_active = 1 AND $where_clause
                         GROUP BY dm.category";
 
-        if (!empty($filter_params)) {
-            $stmt = $conn->prepare($sql_categories);
-            $param_types = str_repeat('s', count($filter_params));
-            $stmt->bind_param($param_types, ...$filter_params);
-            $stmt->execute();
-            $category_result = $stmt->get_result();
-        } else {
-            $category_result = $conn->query($sql_categories);
-        }
+        $category_result = $conn->query($sql_categories);
         $category_stats = ['dua' => 0, 'tasbeeh' => 0, 'namaz' => 0];
         while ($row = $category_result->fetch_assoc()) {
             $category_stats[$row['category']] = $row['total_count'];
+        }
+
+        if ($include_system_bulk) {
+            $sql_orphan_categories = "SELECT 
+                                        dm.category,
+                                        COALESCE(SUM(de.count_added), 0) as total_count
+                                     FROM dua_entries de
+                                     LEFT JOIN users u ON de.user_id = u.id
+                                     JOIN duas_master dm ON de.dua_id = dm.id
+                                     WHERE u.id IS NULL
+                                     GROUP BY dm.category";
+            $orphan_result = $conn->query($sql_orphan_categories);
+            while ($row = $orphan_result->fetch_assoc()) {
+                if (!isset($category_stats[$row['category']])) {
+                    $category_stats[$row['category']] = 0;
+                }
+                $category_stats[$row['category']] += $row['total_count'];
+            }
         }
         ?>
 

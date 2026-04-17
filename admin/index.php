@@ -52,8 +52,8 @@ if ($is_amali_admin) {
     
     // For user counting: Include both users and admins who participate
     $where_sql_users = " WHERE (role = 'user' OR role = 'admin') AND its_number NOT LIKE '000000%'";
-    // For data sums: Include real users, admins + system bulk storage
-    $where_sql_data = " WHERE (u.role = 'user' OR u.role = 'admin' OR u.role = 'system')";
+    // For global data sums: include users/admins and system-category bulk storage accounts.
+    $where_sql_data = " WHERE (u.role = 'user' OR u.role = 'admin' OR u.role = 'system' OR u.category = 'system')";
     
     $params_users = [];
     $params_data = [];
@@ -61,8 +61,8 @@ if ($is_amali_admin) {
         $where_sql_users .= " AND category = ?";
         $params_users[] = $assigned_category;
         
-        // For regional coordinators, show their branch (users+admins) + global bulk storage
-        $where_sql_data .= " AND (u.category = ? OR u.role = 'system')";
+        // For regional coordinators, keep scope strictly to their own branch
+        $where_sql_data .= " AND u.category = ?";
         $params_data[] = $assigned_category;
     }
     
@@ -114,6 +114,23 @@ if ($is_amali_admin) {
     $category_stats = ['dua' => 0, 'tasbeeh' => 0, 'namaz' => 0];
     while ($row = $cat_res->fetch_assoc()) {
         $category_stats[$row['category']] = $row['total_count'];
+    }
+
+    // Include orphan bulk entries only in global scope.
+    $sql_orphan_categories = "SELECT 
+                                dm.category,
+                                COALESCE(SUM(de.count_added), 0) as total_count
+                             FROM dua_entries de
+                             LEFT JOIN users u ON de.user_id = u.id
+                             JOIN duas_master dm ON de.dua_id = dm.id
+                             WHERE u.id IS NULL
+                             GROUP BY dm.category";
+    $orphan_result = $conn->query($sql_orphan_categories);
+    while ($row = $orphan_result->fetch_assoc()) {
+        if (!isset($category_stats[$row['category']])) {
+            $category_stats[$row['category']] = 0;
+        }
+        $category_stats[$row['category']] += $row['total_count'];
     }
     
     // Get Books stats
@@ -655,7 +672,7 @@ require_once '../includes/header.php';
                 <a href="https://ziyarat1449.web.app/" target="_blank" class="btn btn-info" style="background-color: #0ea5e9; color: white;">
                     <i class="fas fa-mosque"></i> Ziyarat Portal
                 </a>
-                <?php if (is_super_admin()): ?>
+                <?php if (can_manage_amali_masters()): ?>
                 <a href="manage_duas.php" class="btn btn-success">
                     <i class="fas fa-hands-praying"></i> Manage Duas
                 </a>

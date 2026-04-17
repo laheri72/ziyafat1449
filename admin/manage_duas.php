@@ -4,8 +4,8 @@ require_once '../includes/functions.php';
 
 require_admin();
 
-// Check if user is super admin
-if (!is_super_admin()) {
+// Allow only super admin and global amali coordinator-level access.
+if (!can_manage_amali_masters()) {
     header('Location: index.php');
     exit();
 }

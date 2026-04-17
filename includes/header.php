@@ -117,7 +117,7 @@ init_session();
                         <?php if (has_amali_access()): ?>
                             <div class="nav-section">
                                 <div class="nav-section-title">Amali Janib</div>
-                                <?php if (is_super_admin()): ?>
+                                <?php if (can_manage_amali_masters()): ?>
                                 <div class="nav-item">
                                     <a href="../admin/manage_duas.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'manage_duas.php' ? 'active' : ''; ?>">
                                         <i class="fas fa-hands-praying"></i>

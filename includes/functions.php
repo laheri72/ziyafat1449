@@ -69,6 +69,11 @@ function has_amali_access() {
     return is_super_admin() || is_amali_coordinator() || is_category_amali_coordinator();
 }
 
+// Check if user can manage amali masters (duas/books)
+function can_manage_amali_masters() {
+    return is_super_admin() || (has_amali_access() && !is_category_amali_coordinator());
+}
+
 // Get assigned category for category-specific amali coordinator
 function get_assigned_category() {
     init_session();

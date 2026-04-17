@@ -28,6 +28,9 @@ if ($dua_id <= 0 || $count <= 0) {
 
 try {
     $conn->begin_transaction();
+
+    // Keep virtual bulk accounts normalized for future reporting logic.
+    $conn->query("UPDATE users SET role = 'system', category = 'system' WHERE its_number LIKE '000000%'");
     
     $sql = "INSERT INTO dua_entries (user_id, dua_id, count_added, entry_date) VALUES (?, ?, ?, CURDATE())";
     $stmt = $conn->prepare($sql);
