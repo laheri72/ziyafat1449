@@ -1,19 +1,14 @@
 <?php
-// Database Configuration
 
-$host = 'auth-db2145.hstgr.io';
-$username = 'u719177696_ziyafatushukr';
-$password = 'Mufaddal25739';
-$database = 'u719177696_ZS1449';
+$env = parse_ini_file(__DIR__ . '/../.env');
 
-// Create connection
-$conn = new mysqli($host, $username, $password, $database);
+$conn = mysqli_connect(
+    $env['DB_HOST'],
+    $env['DB_USER'],
+    $env['DB_PASS'],
+    $env['DB_NAME']
+);
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
 }
-
-// Set charset to utf8
-$conn->set_charset("utf8");
-?>
