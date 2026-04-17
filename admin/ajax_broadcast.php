@@ -5,6 +5,60 @@ require_once '../includes/mailer_helper.php';
 
 header('Content-Type: application/json');
 
+$default_subject = 'Your Amali Hadaya Report';
+
+function get_campaign_goals($campaign) {
+    $defaults = ['dua' => 100, 'tasbeeh' => 100, 'namaz' => 100];
+    if (!$campaign || empty($campaign['custom_message'])) {
+        return $defaults;
+    }
+
+    $decoded = json_decode($campaign['custom_message'], true);
+    if (!is_array($decoded)) {
+        return $defaults;
+    }
+
+    foreach ($defaults as $key => $value) {
+        if (isset($decoded[$key])) {
+            $defaults[$key] = max(1, min(200, intval($decoded[$key])));
+        }
+    }
+
+    return $defaults;
+}
+
+function build_goal_progress_block($label, $current, $baseTarget, $goalPct, $color) {
+    $goalTarget = max(1, round(($baseTarget * $goalPct) / 100));
+    $progressPct = round(($current / $goalTarget) * 100, 1);
+    $barWidth = min(100, max(0, $progressPct));
+    $delta = $current - $goalTarget;
+
+    if ($delta > 0) {
+        $deltaText = "Ahead by <strong>" . number_format($delta) . "</strong>";
+        $deltaColor = '#166534';
+    } elseif ($delta < 0) {
+        $deltaText = "Behind by <strong>" . number_format(abs($delta)) . "</strong>";
+        $deltaColor = '#991b1b';
+    } else {
+        $deltaText = "On target";
+        $deltaColor = '#1e3a8a';
+    }
+
+    return "
+    <div class='stat-box' style='margin-bottom: 12px;'>
+        <div style='display:flex; justify-content:space-between; gap:8px; align-items:center;'>
+            <strong>$label</strong>
+            <span style='font-size:12px; color:#475569;'>Goal: $goalPct%</span>
+        </div>
+        <div style='font-size: 13px; margin-top: 4px;'>
+            Achieved: <strong>" . number_format($current) . "</strong> / Target: <strong>" . number_format($goalTarget) . "</strong>
+            (<strong>" . number_format($progressPct, 1) . "%</strong>)
+        </div>
+        <div class='progress-bar'><div class='progress-fill' style='width: {$barWidth}%; background: {$color};'></div></div>
+        <div style='margin-top: 4px; font-size: 12px; color: {$deltaColor};'>{$deltaText}</div>
+    </div>";
+}
+
 // 1. Security Check
 if (!is_super_admin()) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized access.']);
@@ -13,6 +67,7 @@ if (!is_super_admin()) {
 
 $campaign_id = intval($_POST['campaign_id'] ?? 0);
 $batch_size = intval($_POST['batch_size'] ?? 10);
+$test_user_id = intval($_POST['test_user_id'] ?? 0);
 
 if ($campaign_id === 0) {
     echo json_encode(['success' => false, 'message' => 'Invalid Campaign ID']);
@@ -25,12 +80,17 @@ if (!$campaign) {
     echo json_encode(['success' => false, 'message' => 'Campaign not found']);
     exit();
 }
+$goals = get_campaign_goals($campaign);
 
 // 3. Get Users not yet sent for this campaign (Include Admins as well)
-$sql = "SELECT * FROM users 
-        WHERE (role = 'user' OR role = 'admin') AND its_number NOT LIKE '000000%'
-        AND id NOT IN (SELECT user_id FROM mail_sent_logs WHERE campaign_id = $campaign_id AND status = 'success')
-        LIMIT $batch_size";
+if ($test_user_id > 0) {
+    $sql = "SELECT * FROM users WHERE id = $test_user_id LIMIT 1";
+} else {
+    $sql = "SELECT * FROM users 
+            WHERE (role = 'user' OR role = 'admin') AND its_number NOT LIKE '000000%'
+            AND id NOT IN (SELECT user_id FROM mail_sent_logs WHERE campaign_id = $campaign_id AND status = 'success')
+            LIMIT $batch_size";
+}
 
 $users_res = $conn->query($sql);
 $sent_count = 0;
@@ -46,13 +106,25 @@ while ($user = $users_res->fetch_assoc()) {
 
     // --- Generate Personalized Stats ---
     $quran = get_quran_progress($conn, $userId);
-    
-    $dua_summary = [];
-    $res = $conn->query("SELECT dm.category, COALESCE(SUM(de.count_added), 0) as count 
-                         FROM duas_master dm 
-                         LEFT JOIN dua_entries de ON dm.id = de.dua_id AND de.user_id = $userId 
-                         WHERE dm.is_active = 1 GROUP BY dm.category");
-    while($row = $res->fetch_assoc()) { $dua_summary[$row['category']] = $row['count']; }
+
+    $category_progress = [
+        'dua' => ['completed' => 0, 'target' => 0],
+        'tasbeeh' => ['completed' => 0, 'target' => 0],
+        'namaz' => ['completed' => 0, 'target' => 0]
+    ];
+    $res = $conn->query("SELECT dm.category,
+                                COALESCE(SUM(dm.target_count), 0) as base_target,
+                                COALESCE(SUM(de.count_added), 0) as completed
+                         FROM duas_master dm
+                         LEFT JOIN dua_entries de ON dm.id = de.dua_id AND de.user_id = $userId
+                         WHERE dm.is_active = 1
+                         GROUP BY dm.category");
+    while($row = $res->fetch_assoc()) {
+        if (isset($category_progress[$row['category']])) {
+            $category_progress[$row['category']]['completed'] = intval($row['completed']);
+            $category_progress[$row['category']]['target'] = intval($row['base_target']);
+        }
+    }
     
     $books_res = get_book_progress($conn, $userId);
     $books = ['completed' => 0, 'in_progress' => 0];
@@ -81,30 +153,42 @@ while ($user = $users_res->fetch_assoc()) {
     }
 
     // Construct Email
-    $custom_note = nl2br(htmlspecialchars($campaign['custom_message']));
+    $goal_blocks = "";
+    $goal_blocks .= build_goal_progress_block('Dua', $category_progress['dua']['completed'], $category_progress['dua']['target'], $goals['dua'], '#2563eb');
+    $goal_blocks .= build_goal_progress_block('Tasbeeh', $category_progress['tasbeeh']['completed'], $category_progress['tasbeeh']['target'], $goals['tasbeeh'], '#d97706');
+    $goal_blocks .= build_goal_progress_block('Namaz', $category_progress['namaz']['completed'], $category_progress['namaz']['target'], $goals['namaz'], '#7c3aed');
+
     $content = "
-    <p>$custom_note</p>
+    <p><strong>Event:</strong> " . htmlspecialchars($campaign['event_name']) . "</p>
+    <p>This report shows your current progress against the campaign goals set by Janib.</p>
     
     <div class='stat-box'>
-        <strong>Spiritual Progress (Amali Janib):</strong><br>
-        • Quran: {$quran['completed_juz']} / 120 Juz
+        <strong>Quran Progress:</strong><br>
+        • Completed: {$quran['completed_juz']} / 120 Juz
         <div class='progress-bar'><div class='progress-fill' style='width: {$quran['progress_percentage']}%; background: #10b981;'></div></div>
-        
-        • Duas Recited: " . number_format($dua_summary['dua'] ?? 0) . "<br>
-        • Istinsakh (Books): {$books['completed']} Completed, {$books['in_progress']} In Progress
+    </div>
+
+    <div style='margin: 12px 0;'>
+        <strong>Amali Goal Tracking (Personalized):</strong>
+        $goal_blocks
+    </div>
+
+    <div class='stat-box'>
+        <strong>Istinsakh ul Kutub:</strong><br>
+        • {$books['completed']} Completed, {$books['in_progress']} In Progress
     </div>
 
     $cat_insights
     ";
 
-    $body = get_email_template($campaign['subject'], $content, $userName);
+    $body = get_email_template($default_subject, $content, $userName);
 
     $current_status = 'success';
     $error_msg = null;
 
     // --- EXECUTION WITH ERROR CATCHING ---
     try {
-        if (!send_email($email, $campaign['subject'], $body)) {
+        if (!send_email($email, $default_subject, $body)) {
             $current_status = 'failed';
             $error_msg = "SMTP rejected delivery.";
         }

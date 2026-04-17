@@ -14,26 +14,56 @@ $js_path = '../assets/js/';
 
 $error = '';
 $success = '';
+$default_subject = 'Your Amali Hadaya Report';
+
+function get_campaign_goal_settings($campaign) {
+    $defaults = ['dua' => 100, 'tasbeeh' => 100, 'namaz' => 100];
+    if (!$campaign || empty($campaign['custom_message'])) {
+        return $defaults;
+    }
+
+    $decoded = json_decode($campaign['custom_message'], true);
+    if (!is_array($decoded)) {
+        return $defaults;
+    }
+
+    foreach ($defaults as $key => $value) {
+        if (isset($decoded[$key])) {
+            $defaults[$key] = max(1, min(200, intval($decoded[$key])));
+        }
+    }
+
+    return $defaults;
+}
 
 // Handle New Campaign Creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_campaign'])) {
     $event_name = clean_input($_POST['event_name']);
-    $subject = clean_input($_POST['subject']);
-    $custom_message = $_POST['custom_message']; // Keep HTML formatting if any
+    $goal_dua = max(1, min(200, intval($_POST['goal_dua'] ?? 100)));
+    $goal_tasbeeh = max(1, min(200, intval($_POST['goal_tasbeeh'] ?? 100)));
+    $goal_namaz = max(1, min(200, intval($_POST['goal_namaz'] ?? 100)));
+    $goal_payload = json_encode([
+        'dua' => $goal_dua,
+        'tasbeeh' => $goal_tasbeeh,
+        'namaz' => $goal_namaz
+    ]);
 
-    if (empty($event_name) || empty($subject)) {
-        $error = 'Please provide Event Name and Subject.';
+    if (empty($event_name)) {
+        $error = 'Please provide Event Name.';
     } else {
-        // Set all other active campaigns to completed to focus on the new one
-        $conn->query("UPDATE mail_campaigns SET status = 'completed' WHERE status = 'active'");
-        
-        $sql = "INSERT INTO mail_campaigns (event_name, subject, custom_message, status) VALUES (?, ?, ?, 'active')";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sss", $event_name, $subject, $custom_message);
-        if ($stmt->execute()) {
-            $success = "New campaign '$event_name' created and set as Active.";
+        $existing_active = $conn->query("SELECT id, event_name FROM mail_campaigns WHERE status = 'active' LIMIT 1")->fetch_assoc();
+
+        if ($existing_active) {
+            $error = "An active campaign already exists ('" . htmlspecialchars($existing_active['event_name']) . "'). Please archive it before creating a new event.";
         } else {
-            $error = "Failed to create campaign.";
+            $sql = "INSERT INTO mail_campaigns (event_name, subject, custom_message, status) VALUES (?, ?, ?, 'active')";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sss", $event_name, $default_subject, $goal_payload);
+            if ($stmt->execute()) {
+                $success = "New campaign '$event_name' created with goal settings and set as Active.";
+            } else {
+                $error = "Failed to create campaign.";
+            }
         }
     }
 }
@@ -46,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['archive_campaign'])) 
 
 // Get active campaign
 $active_campaign = $conn->query("SELECT * FROM mail_campaigns WHERE status = 'active' LIMIT 1")->fetch_assoc();
+$campaign_goals = get_campaign_goal_settings($active_campaign);
 
 // Get campaign stats if active
 $total_users = 0;
@@ -107,8 +138,9 @@ require_once '../includes/header.php';
                 </div>
 
                 <div class="stat-box" style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; margin: 20px 0;">
-                    <p><strong>Subject:</strong> <?php echo htmlspecialchars($active_campaign['subject']); ?></p>
-                    <p><strong>Custom Note:</strong> <?php echo nl2br(htmlspecialchars($active_campaign['custom_message'])); ?></p>
+                    <p><strong>Subject:</strong> <?php echo htmlspecialchars($default_subject); ?></p>
+                    <p><strong>Goal Settings for This Campaign:</strong></p>
+                    <p style="margin: 0.25rem 0;">Dua: <strong><?php echo $campaign_goals['dua']; ?>%</strong> | Tasbeeh: <strong><?php echo $campaign_goals['tasbeeh']; ?>%</strong> | Namaz: <strong><?php echo $campaign_goals['namaz']; ?>%</strong></p>
                 </div>
 
                 <div class="action-buttons" style="flex-wrap: wrap; align-items: flex-end;">
@@ -125,6 +157,10 @@ require_once '../includes/header.php';
                             <i class="fas fa-check-double"></i> All users have been reached for this campaign!
                         </div>
                     <?php endif; ?>
+
+                    <button type="button" class="btn btn-info" onclick="sendTestMail(<?php echo $active_campaign['id']; ?>)">
+                        <i class="fas fa-vial"></i> Test (25687)
+                    </button>
                     
                     <form method="POST" action="" onsubmit="return confirm('Archive this campaign and start fresh?')">
                         <button type="submit" name="archive_campaign" class="btn btn-secondary">Archive Campaign</button>
@@ -163,20 +199,41 @@ require_once '../includes/header.php';
         <div class="card-header">
             <h3><i class="fas fa-plus-circle"></i> Create New Broadcast Event</h3>
         </div>
+        <?php if ($active_campaign): ?>
+            <div class="alert alert-warning" style="margin: 0 var(--spacing-lg) var(--spacing-md) var(--spacing-lg);">
+                <i class="fas fa-lock"></i>
+                New campaign creation is locked while an event is active.
+                Please archive <strong><?php echo htmlspecialchars($active_campaign['event_name']); ?></strong> first.
+            </div>
+        <?php endif; ?>
         <form method="POST" action="" style="padding: var(--spacing-lg);">
             <div class="form-group">
                 <label for="event_name">Event Name (Internal Reference)</label>
-                <input type="text" id="event_name" name="event_name" class="form-control" placeholder="e.g., Ramadan Reminder 1449" required>
+                <input type="text" id="event_name" name="event_name" class="form-control" placeholder="e.g., Ramadan Reminder 1449" <?php echo $active_campaign ? 'disabled' : ''; ?> required>
             </div>
             <div class="form-group">
-                <label for="subject">Email Subject</label>
-                <input type="text" id="subject" name="subject" class="form-control" placeholder="e.g., Your Spiritual Progress Update" required>
+                <label>Default Email Subject</label>
+                <input type="text" class="form-control" value="<?php echo htmlspecialchars($default_subject); ?>" readonly>
             </div>
             <div class="form-group">
-                <label for="custom_message">Personalized Header Note</label>
-                <textarea id="custom_message" name="custom_message" class="form-control" rows="4" placeholder="This note will appear at the top of the email before their stats..."></textarea>
+                <label><i class="fas fa-bullseye"></i> Goal Setting (%)</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                    <div>
+                        <label for="goal_dua" style="font-size: 0.85rem;">Dua Goal %</label>
+                        <input type="number" id="goal_dua" name="goal_dua" class="form-control" min="1" max="200" value="100" <?php echo $active_campaign ? 'disabled' : ''; ?> required>
+                    </div>
+                    <div>
+                        <label for="goal_tasbeeh" style="font-size: 0.85rem;">Tasbeeh Goal %</label>
+                        <input type="number" id="goal_tasbeeh" name="goal_tasbeeh" class="form-control" min="1" max="200" value="100" <?php echo $active_campaign ? 'disabled' : ''; ?> required>
+                    </div>
+                    <div>
+                        <label for="goal_namaz" style="font-size: 0.85rem;">Namaz Goal %</label>
+                        <input type="number" id="goal_namaz" name="goal_namaz" class="form-control" min="1" max="200" value="100" <?php echo $active_campaign ? 'disabled' : ''; ?> required>
+                    </div>
+                </div>
+                <small class="form-text text-muted">These goals define expected completion percentage versus each user's base target.</small>
             </div>
-            <button type="submit" name="create_campaign" class="btn btn-primary">
+            <button type="submit" name="create_campaign" class="btn btn-primary" <?php echo $active_campaign ? 'disabled title="Archive current campaign first"' : ''; ?>>
                 <i class="fas fa-save"></i> Create and Activate Campaign
             </button>
         </form>
@@ -357,6 +414,35 @@ async function startBatchSend(campaignId) {
     reloadBtn.innerHTML = "<i class='fas fa-sync'></i> Refresh Dashboard";
     reloadBtn.onclick = () => location.reload();
     progressDiv.appendChild(reloadBtn);
+}
+
+async function sendTestMail(campaignId) {
+    if (!confirm('Send one test mail to user ID 650 now?')) return;
+
+    try {
+        const response = await fetch('ajax_broadcast.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `campaign_id=${campaignId}&batch_size=1&test_user_id=650`
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+            showToast(result.message || 'Test send failed.', 'error');
+            return;
+        }
+
+        const detail = (result.details && result.details.length) ? result.details[0] : null;
+        if (detail && detail.status === 'success') {
+            showToast(`Test mail sent to ${detail.email}`, 'success');
+        } else if (detail) {
+            showToast(`Test mail failed: ${detail.error || 'Unknown error'}`, 'error');
+        } else {
+            showToast(result.message || 'Test send completed.', 'info');
+        }
+    } catch (error) {
+        showToast('Could not connect to server for test send.', 'error');
+    }
 }
 </script>
 
