@@ -2,13 +2,13 @@
 require_once '../config/database.php';
 require_once '../includes/functions.php';
 
-// Strict Super Admin check
-if (!is_super_admin()) {
+// Broadcast access check
+if (!can_access_broadcast_center()) {
     header('Location: index.php');
     exit();
 }
 
-$page_title = 'Super Admin: Broadcast Center';
+$page_title = 'Broadcast Center';
 $css_path = '../assets/css/';
 $js_path = '../assets/js/';
 

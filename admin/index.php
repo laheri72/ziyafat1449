@@ -377,14 +377,16 @@ require_once '../includes/header.php';
                 <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
             </div>
             <div class="action-buttons">
+                <?php if (is_super_admin()): ?>
                 <a href="add_user.php" class="btn btn-primary">
                     <i class="fas fa-user-plus"></i> Add New User
                 </a>
+                <?php endif; ?>
                 <a href="add_contribution.php" class="btn btn-success">
                     <i class="fas fa-plus"></i> Add Contribution
                 </a>
                 <a href="view_users.php" class="btn btn-secondary">
-                    <i class="fas fa-users"></i> View All Users
+                    <i class="fas fa-users"></i> View Users/Admins
                 </a>
                 <a href="reports.php" class="btn btn-warning">
                     <i class="fas fa-chart-bar"></i> View Reports
@@ -392,10 +394,12 @@ require_once '../includes/header.php';
                 <a href="https://ziyarat1449.web.app/" target="_blank" class="btn btn-info" style="background-color: #0ea5e9; color: white;">
                     <i class="fas fa-mosque"></i> Ziyarat Portal
                 </a>
-                <?php if (is_super_admin()): ?>
+                <?php if (can_access_broadcast_center()): ?>
                 <a href="broadcast_center.php" class="btn btn-purple" style="background-color: #8b5cf6; color: white;">
                     <i class="fas fa-bullhorn"></i> Broadcast Center
                 </a>
+                <?php endif; ?>
+                <?php if (is_super_admin()): ?>
                 <a href="bulk_amali_entry.php" class="btn btn-dark" style="background-color: #1e293b; color: white;">
                     <i class="fas fa-layer-group"></i> Bulk Amali Entry
                 </a>

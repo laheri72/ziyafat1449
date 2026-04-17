@@ -4,6 +4,11 @@ require_once '../includes/functions.php';
 
 require_admin();
 
+if (!is_super_admin()) {
+    header('Location: index.php');
+    exit();
+}
+
 $page_title = 'Add New User';
 $css_path = '../assets/css/';
 $js_path = '../assets/js/';

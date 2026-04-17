@@ -11,8 +11,8 @@ $js_path = '../assets/js/';
 // Get system settings
 $settings = get_system_settings($conn);
 
-// Get total users count
-$sql = "SELECT COUNT(*) as total FROM users WHERE role = 'user'";
+// Get total members count (users + admins)
+$sql = "SELECT COUNT(*) as total FROM users WHERE role IN ('user', 'admin')";
 $result = $conn->query($sql);
 $total_users = $result->fetch_assoc()['total'];
 
@@ -30,35 +30,37 @@ $remaining_inr = $total_target_inr - $all_contributions['total_inr'];
 // Calculate progress percentage
 $progress = calculate_percentage($all_contributions['total_usd'], $total_target_usd);
 
-// Get user-wise contribution report
+// Get member-wise contribution report
 $sql = "SELECT 
             u.id,
             u.its_number,
             u.tr_number,
             u.name,
+            u.role,
             COALESCE(SUM(c.amount_usd), 0) as total_usd,
             COALESCE(SUM(c.amount_inr), 0) as total_inr,
             COUNT(c.id) as transaction_count
         FROM users u
         LEFT JOIN contributions c ON u.id = c.user_id
-        WHERE u.role = 'user'
+        WHERE u.role IN ('user', 'admin')
         GROUP BY u.id
         ORDER BY u.tr_number ASC";
 
 $user_report = $conn->query($sql);
 
-// Get users with pending payments
+// Get members with pending payments
 $sql = "SELECT 
             u.id,
             u.its_number,
             u.tr_number,
             u.name,
             u.email,
+            u.role,
             COALESCE(SUM(c.amount_usd), 0) as paid_usd,
             (? - COALESCE(SUM(c.amount_usd), 0)) as pending_usd
         FROM users u
         LEFT JOIN contributions c ON u.id = c.user_id
-        WHERE u.role = 'user'
+        WHERE u.role IN ('user', 'admin')
         GROUP BY u.id
         HAVING pending_usd > 0
         ORDER BY u.tr_number ASC";
@@ -77,9 +79,9 @@ require_once '../includes/header.php';
     <!-- Stats Grid -->
     <div class="stats-grid">
         <div class="stat-card">
-            <h4>Total Users</h4>
+            <h4>Total Members</h4>
             <div class="stat-value"><?php echo $total_users; ?></div>
-            <div class="stat-label">registered users</div>
+            <div class="stat-label">registered users + admins</div>
         </div>
 
         <div class="stat-card success">
@@ -122,7 +124,7 @@ require_once '../includes/header.php';
     <!-- Year-wise Breakdown -->
     <div class="card">
         <div class="card-header">
-            <h3><i class="fas fa-calendar-alt"></i> Year-wise Collection Breakdown (All Users)</h3>
+            <h3><i class="fas fa-calendar-alt"></i> Year-wise Collection Breakdown (All Members)</h3>
         </div>
         <div class="stats-grid">
             <div class="stat-card">
@@ -153,14 +155,14 @@ require_once '../includes/header.php';
         <canvas id="yearChart" style="max-height: 300px;"></canvas>
     </div>
 
-    <!-- User-wise Contribution Report -->
+    <!-- Member-wise Contribution Report -->
     <div class="card">
         <div class="card-header">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <h3><i class="fas fa-users"></i> User-wise Contribution Report</h3>
+                <h3><i class="fas fa-users"></i> Member-wise Contribution Report</h3>
                 <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                     <select id="filterAmount" class="form-control" style="width: 200px;">
-                        <option value="all">All Users</option>
+                        <option value="all">All Members</option>
                         <option value="zero">No Payment (₹0)</option>
                         <option value="partial">Partial Payment</option>
                         <option value="complete">Complete Payment</option>
@@ -180,6 +182,7 @@ require_once '../includes/header.php';
                             <th>TR Number</th>
                             <th>ITS Number</th>
                             <th>Name</th>
+                            <th>Role</th>
                             <th>Total Contributed (INR)</th>
                             <th>Total Contributed (USD)</th>
                             <th>Remaining (INR)</th>
@@ -196,6 +199,11 @@ require_once '../includes/header.php';
                                 <td><?php echo htmlspecialchars($user['tr_number']); ?></td>
                                 <td><?php echo htmlspecialchars($user['its_number']); ?></td>
                                 <td><?php echo htmlspecialchars($user['name']); ?></td>
+                                <td>
+                                    <span class="badge <?php echo $user['role'] === 'admin' ? 'badge-danger' : 'badge-primary'; ?>">
+                                        <?php echo ucfirst($user['role']); ?>
+                                    </span>
+                                </td>
                                 <td><?php echo format_currency($user['total_inr'], 'INR'); ?></td>
                                 <td><?php echo format_currency($user['total_usd']); ?></td>
                                 <td><?php echo format_currency($settings['target_amount_inr'] - $user['total_inr'], 'INR'); ?></td>
@@ -212,7 +220,7 @@ require_once '../includes/header.php';
                     </tbody>
                 </table>
             <?php else: ?>
-                <p class="text-center">No data available.</p>
+                <p class="text-center">No member data available.</p>
             <?php endif; ?>
         </div>
     </div>
@@ -243,7 +251,11 @@ require_once '../includes/header.php';
                             <tr>
                                 <td><?php echo htmlspecialchars($user['tr_number']); ?></td>
                                 <td><?php echo htmlspecialchars($user['its_number']); ?></td>
-                                <td><?php echo htmlspecialchars($user['name']); ?></td>
+                                <td><?php echo htmlspecialchars($user['name']); ?>
+                                    <span class="badge <?php echo $user['role'] === 'admin' ? 'badge-danger' : 'badge-primary'; ?>" style="margin-left: 0.35rem;">
+                                        <?php echo ucfirst($user['role']); ?>
+                                    </span>
+                                </td>
                                 <td><?php echo htmlspecialchars($user['email']); ?></td>
                                 <td><?php echo format_currency($user['paid_usd'] * 84.67, 'INR'); ?></td>
                                 <td class="text-danger"><strong><?php echo format_currency($user['pending_usd'] * 84.67, 'INR'); ?></strong></td>
@@ -259,7 +271,7 @@ require_once '../includes/header.php';
                     </tbody>
                 </table>
             <?php else: ?>
-                <p class="text-center text-success"><i class="fas fa-check-circle"></i> All users have completed their payments!</p>
+                <p class="text-center text-success"><i class="fas fa-check-circle"></i> All members have completed their payments!</p>
             <?php endif; ?>
         </div>
     </div>
@@ -284,8 +296,8 @@ function filterTable() {
         const trNumber = cells[0].textContent.toLowerCase();
         const itsNumber = cells[1].textContent.toLowerCase();
         const name = cells[2].textContent.toLowerCase();
-        const totalINR = parseFloat(cells[3].textContent.replace(/[₹,]/g, ''));
-        const progressText = cells[6].textContent.trim();
+        const totalINR = parseFloat(cells[4].textContent.replace(/[₹,]/g, ''));
+        const progressText = cells[7].textContent.trim();
         const progress = parseInt(progressText.replace('%', ''));
         
         // Search filter

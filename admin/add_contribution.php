@@ -8,8 +8,12 @@ $page_title = 'Add Contribution';
 $css_path = '../assets/css/';
 $js_path = '../assets/js/';
 
-// Get all users
-$sql = "SELECT id, its_number, tr_number, name FROM users WHERE role = 'user' ORDER BY tr_number ASC";
+// Finance access can add contributions for both users and admins.
+if (has_finance_access()) {
+    $sql = "SELECT id, its_number, tr_number, name, role FROM users WHERE role IN ('user', 'admin') ORDER BY role DESC, tr_number ASC";
+} else {
+    $sql = "SELECT id, its_number, tr_number, name, role FROM users WHERE role = 'user' ORDER BY tr_number ASC";
+}
 $users = $conn->query($sql);
 
 require_once '../includes/header.php';
@@ -21,12 +25,12 @@ require_once '../includes/header.php';
     <div class="card">
         <form id="addContributionForm">
             <div class="form-group">
-                <label for="user_id"><i class="fas fa-user"></i> Select User *</label>
+                <label for="user_id"><i class="fas fa-user"></i> Select Member *</label>
                 <select id="user_id" name="user_id" class="form-control select2-user" required>
-                    <option value="">-- Select User --</option>
+                    <option value="">-- Select Member --</option>
                     <?php while ($user = $users->fetch_assoc()): ?>
                         <option value="<?php echo $user['id']; ?>">
-                            <?php echo htmlspecialchars($user['tr_number']) . ' - ' . htmlspecialchars($user['name']) . ' (' . htmlspecialchars($user['its_number']) . ')'; ?>
+                            <?php echo htmlspecialchars($user['tr_number']) . ' - ' . htmlspecialchars($user['name']) . ' (' . htmlspecialchars($user['its_number']) . ') [' . strtoupper($user['role']) . ']'; ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
@@ -125,7 +129,7 @@ require_once '../includes/header.php';
 <script>
 $(document).ready(function() {
     $('.select2-user').select2({
-        placeholder: '-- Select User --',
+        placeholder: '-- Select Member --',
         width: '100%'
     });
 

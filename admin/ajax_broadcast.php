@@ -60,7 +60,7 @@ function build_goal_progress_block($label, $current, $baseTarget, $goalPct, $col
 }
 
 // 1. Security Check
-if (!is_super_admin()) {
+if (!can_access_broadcast_center()) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized access.']);
     exit();
 }

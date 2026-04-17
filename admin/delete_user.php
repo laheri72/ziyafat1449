@@ -11,6 +11,22 @@ if ($user_id === 0 || $user_id === $_SESSION['user_id']) {
     exit();
 }
 
+$sql = "SELECT role FROM users WHERE id = ? LIMIT 1";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$target_user = $stmt->get_result()->fetch_assoc();
+
+if (!$target_user) {
+    header('Location: view_users.php?error=User not found');
+    exit();
+}
+
+if (is_finance_admin() && !is_super_admin() && $target_user['role'] === 'admin') {
+    header('Location: view_users.php?error=Finance coordinator cannot delete admin accounts');
+    exit();
+}
+
 // Delete user (contributions will be deleted automatically due to CASCADE)
 $sql = "DELETE FROM users WHERE id = ?";
 $stmt = $conn->prepare($sql);

@@ -31,6 +31,11 @@ if (!$user) {
     exit();
 }
 
+if (is_finance_admin() && !is_super_admin() && $user['role'] === 'admin') {
+    header('Location: view_users.php?error=Finance coordinator cannot edit admin accounts');
+    exit();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['reset_password'])) {
         if (is_super_admin()) {
