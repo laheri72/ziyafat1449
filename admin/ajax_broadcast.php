@@ -88,6 +88,7 @@ if ($test_user_id > 0) {
 } else {
     $sql = "SELECT * FROM users 
             WHERE (role = 'user' OR role = 'admin') AND its_number NOT LIKE '000000%'
+            AND is_subscribed = 1 AND email IS NOT NULL AND email != ''
             AND id NOT IN (SELECT user_id FROM mail_sent_logs WHERE campaign_id = $campaign_id AND status = 'success')
             LIMIT $batch_size";
 }
@@ -187,20 +188,29 @@ while ($user = $users_res->fetch_assoc()) {
     $cat_insights
     ";
 
-    $body = get_email_template($default_subject, $content, $userName);
+    $body = get_email_template($default_subject, $content, $userName, $userId);
 
     $current_status = 'success';
     $error_msg = null;
 
-    // --- EXECUTION WITH ERROR CATCHING ---
-    try {
-        if (!send_email($email, $default_subject, $body)) {
-            $current_status = 'failed';
-            $error_msg = "SMTP rejected delivery.";
-        }
-    } catch (Exception $e) {
+    // --- Validate email format ---
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $current_status = 'failed';
-        $error_msg = $e->getMessage();
+        $error_msg = "Invalid email format.";
+    } else {
+        // --- EXECUTION WITH ERROR CATCHING ---
+        try {
+            if (!send_email($email, $default_subject, $body)) {
+                $current_status = 'failed';
+                $error_msg = "SMTP rejected delivery.";
+            } else {
+                // Throttle specifically on success to avoid rate limits
+                usleep(300000); // 0.3 seconds
+            }
+        } catch (Exception $e) {
+            $current_status = 'failed';
+            $error_msg = $e->getMessage();
+        }
     }
 
     // Log the result

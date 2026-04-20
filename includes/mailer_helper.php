@@ -40,6 +40,7 @@ function send_email($to, $subject, $body) {
         $mail->Subject = $subject;
         $mail->Body    = $body;
         $mail->AltBody = strip_tags($body);
+        $mail->addCustomHeader('Precedence', 'bulk');
 
         $mail->send();
         return true;
@@ -52,9 +53,16 @@ function send_email($to, $subject, $body) {
 /**
  * Generate a professional HTML email template wrapper
  */
-function get_email_template($title, $content, $userName) {
+function get_email_template($title, $content, $userName, $userId = 0) {
     $config = require __DIR__ . '/../config/mail.php';
     $baseUrl = $config['base_url'];
+    
+    $unsubscribeLink = '';
+    if ($userId > 0) {
+        $token = md5($userId . 'ziyafat1449_bulk_mail_secret');
+        $unsubscribeUrl = rtrim($baseUrl, '/') . "/unsubscribe.php?u=$userId&t=$token";
+        $unsubscribeLink = "<p style='margin-top: 15px;'><a href='$unsubscribeUrl' style='color: #94a3b8; text-decoration: underline; font-size: 11px;'>Unsubscribe from all future reminders</a></p>";
+    }
     
     return "
     <!DOCTYPE html>
@@ -87,8 +95,9 @@ function get_email_template($title, $content, $userName) {
                 </center>
             </div>
             <div class='footer'>
-                <p>&copy; 1449 H · Ziyafat us Shukr Reminders</p>
+                <p>&copy; 1449 H &middot; Ziyafat us Shukr Reminders</p>
                 <p>This is an automated reminder from your portal.</p>
+                $unsubscribeLink
             </div>
         </div>
     </body>
