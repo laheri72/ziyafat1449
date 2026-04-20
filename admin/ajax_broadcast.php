@@ -114,9 +114,15 @@ while ($user = $users_res->fetch_assoc()) {
     ];
     $res = $conn->query("SELECT dm.category,
                                 COALESCE(SUM(dm.target_count), 0) as base_target,
-                                COALESCE(SUM(de.count_added), 0) as completed
+                                COALESCE(MAX(sub.completed), 0) as completed
                          FROM duas_master dm
-                         LEFT JOIN dua_entries de ON dm.id = de.dua_id AND de.user_id = $userId
+                         LEFT JOIN (
+                             SELECT dm2.category, SUM(de.count_added) as completed
+                             FROM dua_entries de
+                             JOIN duas_master dm2 ON de.dua_id = dm2.id
+                             WHERE de.user_id = $userId
+                             GROUP BY dm2.category
+                         ) sub ON dm.category = sub.category
                          WHERE dm.is_active = 1
                          GROUP BY dm.category");
     while($row = $res->fetch_assoc()) {
