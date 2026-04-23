@@ -4,7 +4,7 @@ require_once '../includes/functions.php';
 
 require_admin();
 
-if (!is_super_admin()) {
+if (!is_admin()) {
     header('Location: index.php');
     exit();
 }

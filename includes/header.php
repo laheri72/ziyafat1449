@@ -82,23 +82,27 @@ init_session();
                             </div>
                         </div>
 
+                        <div class="nav-section">
+                            <div class="nav-section-title">User Management</div>
+                            <div class="nav-item">
+                                <a href="../admin/view_users.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'view_users.php' ? 'active' : ''; ?>">
+                                    <i class="fas fa-users"></i>
+                                    <span>Users</span>
+                                </a>
+                            </div>
+                            <?php if (is_admin()): ?>
+                            <div class="nav-item">
+                                <a href="../admin/add_user.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'add_user.php' ? 'active' : ''; ?>">
+                                    <i class="fas fa-user-plus"></i>
+                                    <span>Add User</span>
+                                </a>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+
                         <?php if (has_finance_access()): ?>
                             <div class="nav-section">
                                 <div class="nav-section-title">Finance Management</div>
-                                <div class="nav-item">
-                                    <a href="../admin/view_users.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'view_users.php' ? 'active' : ''; ?>">
-                                        <i class="fas fa-users"></i>
-                                        <span>Users</span>
-                                    </a>
-                                </div>
-                                <?php if (is_super_admin()): ?>
-                                <div class="nav-item">
-                                    <a href="../admin/add_user.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'add_user.php' ? 'active' : ''; ?>">
-                                        <i class="fas fa-user-plus"></i>
-                                        <span>Add User</span>
-                                    </a>
-                                </div>
-                                <?php endif; ?>
                                 <div class="nav-item">
                                     <a href="../admin/add_contribution.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'add_contribution.php' ? 'active' : ''; ?>">
                                         <i class="fas fa-plus-circle"></i>

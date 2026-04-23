@@ -102,7 +102,7 @@ require_once '../includes/header.php';
                     <button onclick="exportTableToCSV('dataTable', 'users.csv')" class="btn btn-success btn-sm">
                         <i class="fas fa-download"></i> Export CSV
                     </button>
-                    <?php if (is_super_admin()): ?>
+                    <?php if (is_admin()): ?>
                     <a href="add_user.php" class="btn btn-primary btn-sm">
                         <i class="fas fa-user-plus"></i> Add User
                     </a>
