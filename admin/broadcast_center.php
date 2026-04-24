@@ -231,7 +231,7 @@ require_once '../includes/header.php';
                         <input type="number" id="goal_namaz" name="goal_namaz" class="form-control" min="1" max="200" value="100" <?php echo $active_campaign ? 'disabled' : ''; ?> required>
                     </div>
                 </div>
-                <small class="form-text text-muted">These goals define expected completion percentage versus each user's base target.</small>
+                <small class="form-text text-muted">These goals define expected completion percentage versus each user's base target for every individual Amali item within the category.</small>
             </div>
             <button type="submit" name="create_campaign" class="btn btn-primary" <?php echo $active_campaign ? 'disabled title="Archive current campaign first"' : ''; ?>>
                 <i class="fas fa-save"></i> Create and Activate Campaign

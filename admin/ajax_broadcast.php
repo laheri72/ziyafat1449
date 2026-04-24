@@ -27,17 +27,17 @@ function get_campaign_goals($campaign) {
     return $defaults;
 }
 
-function build_goal_progress_block($label, $current, $baseTarget, $goalPct, $color) {
+function build_compact_progress_block($label, $current, $baseTarget, $goalPct, $color) {
     $goalTarget = max(1, round(($baseTarget * $goalPct) / 100));
     $progressPct = round(($current / $goalTarget) * 100, 1);
     $barWidth = min(100, max(0, $progressPct));
     $delta = $current - $goalTarget;
 
     if ($delta > 0) {
-        $deltaText = "Ahead by <strong>" . number_format($delta) . "</strong>";
+        $deltaText = "Ahead by " . number_format($delta);
         $deltaColor = '#166534';
     } elseif ($delta < 0) {
-        $deltaText = "Behind by <strong>" . number_format(abs($delta)) . "</strong>";
+        $deltaText = "Behind by " . number_format(abs($delta));
         $deltaColor = '#991b1b';
     } else {
         $deltaText = "On target";
@@ -45,17 +45,18 @@ function build_goal_progress_block($label, $current, $baseTarget, $goalPct, $col
     }
 
     return "
-    <div class='stat-box' style='margin-bottom: 12px;'>
-        <div style='display:flex; justify-content:space-between; gap:8px; align-items:center;'>
-            <strong>$label</strong>
-            <span style='font-size:12px; color:#475569;'>Goal: $goalPct%</span>
+    <div style='margin-bottom: 8px; font-size: 13px; background: #f8fafc; padding: 8px 10px; border-radius: 6px; border: 1px solid #e2e8f0;'>
+        <div style='display:flex; justify-content:space-between; margin-bottom: 6px;'>
+            <strong>" . htmlspecialchars($label) . "</strong>
+            <span>" . number_format($current) . " / " . number_format($goalTarget) . "</span>
         </div>
-        <div style='font-size: 13px; margin-top: 4px;'>
-            Achieved: <strong>" . number_format($current) . "</strong> / Target: <strong>" . number_format($goalTarget) . "</strong>
-            (<strong>" . number_format($progressPct, 1) . "%</strong>)
+        <div style='height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 4px;'>
+            <div style='height: 100%; width: {$barWidth}%; background: {$color};'></div>
         </div>
-        <div class='progress-bar'><div class='progress-fill' style='width: {$barWidth}%; background: {$color};'></div></div>
-        <div style='margin-top: 4px; font-size: 12px; color: {$deltaColor};'>{$deltaText}</div>
+        <div style='display:flex; justify-content:space-between; font-size: 11px;'>
+            <span style='color: #475569;'>{$progressPct}% achieved</span>
+            <span style='color: {$deltaColor};'>{$deltaText}</span>
+        </div>
     </div>";
 }
 
@@ -108,28 +109,26 @@ while ($user = $users_res->fetch_assoc()) {
     // --- Generate Personalized Stats ---
     $quran = get_quran_progress($conn, $userId);
 
-    $category_progress = [
-        'dua' => ['completed' => 0, 'target' => 0],
-        'tasbeeh' => ['completed' => 0, 'target' => 0],
-        'namaz' => ['completed' => 0, 'target' => 0]
-    ];
-    $res = $conn->query("SELECT dm.category,
-                                COALESCE(SUM(dm.target_count), 0) as base_target,
-                                COALESCE(MAX(sub.completed), 0) as completed
+    $grouped_duas = ['dua' => [], 'tasbeeh' => [], 'namaz' => []];
+    $res = $conn->query("SELECT dm.id, dm.dua_name, dm.category, dm.target_count as base_target,
+                                COALESCE(sub.completed, 0) as completed
                          FROM duas_master dm
                          LEFT JOIN (
-                             SELECT dm2.category, SUM(de.count_added) as completed
-                             FROM dua_entries de
-                             JOIN duas_master dm2 ON de.dua_id = dm2.id
-                             WHERE de.user_id = $userId
-                             GROUP BY dm2.category
-                         ) sub ON dm.category = sub.category
+                             SELECT dua_id, SUM(count_added) as completed
+                             FROM dua_entries
+                             WHERE user_id = $userId
+                             GROUP BY dua_id
+                         ) sub ON dm.id = sub.dua_id
                          WHERE dm.is_active = 1
-                         GROUP BY dm.category");
+                         ORDER BY dm.display_order, dm.id");
     while($row = $res->fetch_assoc()) {
-        if (isset($category_progress[$row['category']])) {
-            $category_progress[$row['category']]['completed'] = intval($row['completed']);
-            $category_progress[$row['category']]['target'] = intval($row['base_target']);
+        $cat = $row['category'];
+        if (isset($grouped_duas[$cat])) {
+            $grouped_duas[$cat][] = [
+                'name' => $row['dua_name'],
+                'completed' => intval($row['completed']),
+                'target' => intval($row['base_target'])
+            ];
         }
     }
     
@@ -161,9 +160,24 @@ while ($user = $users_res->fetch_assoc()) {
 
     // Construct Email
     $goal_blocks = "";
-    $goal_blocks .= build_goal_progress_block('Dua', $category_progress['dua']['completed'], $category_progress['dua']['target'], $goals['dua'], '#2563eb');
-    $goal_blocks .= build_goal_progress_block('Tasbeeh', $category_progress['tasbeeh']['completed'], $category_progress['tasbeeh']['target'], $goals['tasbeeh'], '#d97706');
-    $goal_blocks .= build_goal_progress_block('Namaz', $category_progress['namaz']['completed'], $category_progress['namaz']['target'], $goals['namaz'], '#7c3aed');
+    $category_colors = ['dua' => '#2563eb', 'tasbeeh' => '#d97706', 'namaz' => '#7c3aed'];
+    foreach ($grouped_duas as $cat => $duas) {
+        if (empty($duas)) continue;
+        $cat_name = ucfirst($cat);
+        $cat_goal = $goals[$cat];
+        $color = $category_colors[$cat] ?? '#1e3a8a';
+        
+        $goal_blocks .= "<div class='stat-box' style='margin-bottom: 12px; padding: 12px;'>";
+        $goal_blocks .= "<div style='display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;'>";
+        $goal_blocks .= "<strong style='color: {$color}; font-size: 14px;'>{$cat_name}</strong>";
+        $goal_blocks .= "<span style='font-size: 12px; color: #475569;'>Goal: {$cat_goal}%</span>";
+        $goal_blocks .= "</div>";
+        
+        foreach ($duas as $dua) {
+            $goal_blocks .= build_compact_progress_block($dua['name'], $dua['completed'], $dua['target'], $cat_goal, $color);
+        }
+        $goal_blocks .= "</div>";
+    }
 
     $content = "
     <p><strong>Event:</strong> " . htmlspecialchars($campaign['event_name']) . "</p>
