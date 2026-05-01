@@ -162,10 +162,10 @@ function get_user_contributions($conn, $user_id) {
     $data = $result->fetch_assoc();
     
     // Year targets in INR (cumulative sequential order)
-    // Total target is 290,000 INR split as: 66k + 97k + 127k
+    // Total target is 127,000 INR split as: 66k + 31k + 30k
     $tasea_target = 66000;      // First 66k goes to Tasea
-    $ashera_target = 97000;     // Next 97k goes to Ashera  
-    $hadi_target = 127000;      // Next 127k goes to Hadi Ashara
+    $ashera_target = 31000;     // Next 31k goes to Ashera (reaching 97k)
+    $hadi_target = 30000;       // Next 30k goes to Hadi Ashara (reaching 127k)
     
     // Total paid in INR
     $total_paid_inr = $data['total_inr'];
@@ -175,11 +175,11 @@ function get_user_contributions($conn, $user_id) {
     $tasea_paid = min($total_paid_inr, $tasea_target);
     $remaining_after_tasea = max(0, $total_paid_inr - $tasea_target);
     
-    // Fill Ashera next (66k to 163k)
+    // Fill Ashera next (66k to 97k)
     $ashera_paid = min($remaining_after_tasea, $ashera_target);
     $remaining_after_ashera = max(0, $remaining_after_tasea - $ashera_target);
     
-    // Fill Hadi Ashara last (163k to 290k)
+    // Fill Hadi Ashara last (97k to 127k)
     $hadi_paid = min($remaining_after_ashera, $hadi_target);
     
     // Convert to USD (approximate)
@@ -222,8 +222,8 @@ function get_all_contributions($conn) {
     
     // Year targets in INR per user
     $tasea_target_per_user = 66000;
-    $ashera_target_per_user = 97000;
-    $hadi_target_per_user = 127000;
+    $ashera_target_per_user = 31000;
+    $hadi_target_per_user = 30000;
     
     // Total targets for all users
     $tasea_target_total = $tasea_target_per_user * $total_users;

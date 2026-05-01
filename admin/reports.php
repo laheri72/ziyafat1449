@@ -136,13 +136,13 @@ require_once '../includes/header.php';
             <div class="stat-card success">
                 <h4>Ashera (97th)</h4>
                 <div class="stat-value"><?php echo format_currency($all_contributions['next_year_inr'], 'INR'); ?></div>
-                <div class="stat-label">Target: <?php echo format_currency(97000 * $total_users, 'INR'); ?></div>
+                <div class="stat-label">Target: <?php echo format_currency(31000 * $total_users, 'INR'); ?> (Total: 97k)</div>
             </div>
 
             <div class="stat-card warning">
                 <h4>Hadi Ashara (127th)</h4>
                 <div class="stat-value"><?php echo format_currency($all_contributions['final_year_inr'], 'INR'); ?></div>
-                <div class="stat-label">Target: <?php echo format_currency(127000 * $total_users, 'INR'); ?></div>
+                <div class="stat-label">Target: <?php echo format_currency(30000 * $total_users, 'INR'); ?> (Total: 127k)</div>
             </div>
         </div>
     </div>

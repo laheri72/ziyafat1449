@@ -47,8 +47,8 @@ $namaz_progress_detail = get_dua_progress($conn, $user_id, 'namaz');
 // Get finance data
 $settings = get_system_settings($conn);
 $contributions = get_user_contributions($conn, $user_id);
-$finance_progress = calculate_percentage($contributions['total_inr'], 290000); // Total target is 290k INR
-$remaining_inr = 290000 - $contributions['total_inr'];
+$finance_progress = calculate_percentage($contributions['total_inr'], $settings['target_amount_inr']); 
+$remaining_inr = $settings['target_amount_inr'] - $contributions['total_inr'];
 
 require_once '../includes/header.php';
 ?>
@@ -183,7 +183,7 @@ require_once '../includes/header.php';
         </div>
         <div class="progress-container">
             <div class="progress-label">
-                <span class="progress-label-text">Paid: <?php echo format_currency($contributions['total_inr'], 'INR'); ?> / <?php echo format_currency(290000, 'INR'); ?></span>
+                <span class="progress-label-text">Paid: <?php echo format_currency($contributions['total_inr'], 'INR'); ?> / <?php echo format_currency($settings['target_amount_inr'], 'INR'); ?></span>
                 <span class="progress-label-value"><?php echo $finance_progress; ?>%</span>
             </div>
             <div class="progress-bar">
