@@ -65,7 +65,7 @@ require_once '../includes/header.php';
             <h3><i class="fas fa-compass"></i> Quick Navigation</h3>
         </div>
         <div style="padding: var(--spacing-xl);">
-            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 0;">
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 0;">
                 <a href="quran_tracking.php" class="btn btn-primary" style="flex-direction: column; padding: 1.5rem 1rem; gap: 10px;">
                     <i class="fas fa-quran" style="font-size: 1.5rem;"></i>
                     <span>Quran Hifzan</span>
@@ -78,20 +78,11 @@ require_once '../includes/header.php';
                     <i class="fas fa-book" style="font-size: 1.5rem;"></i>
                     <span>Istinsakh Kutub</span>
                 </a>
+                <a href="https://ziyarat1449.web.app/" target="_blank" class="btn" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; flex-direction: column; padding: 1.5rem 1rem; gap: 10px; box-shadow: var(--shadow-md); border: none; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-lg)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-md)';">
+                    <i class="fas fa-mosque" style="font-size: 1.5rem;"></i>
+                    <span>Ziyarat Portal</span>
+                </a>
             </div>
-        </div>
-    </div>
-
-    <!-- Ziyarat Card -->
-    <div class="card" style="border-top: 4px solid #0ea5e9; background-color: #f0f9ff;">
-        <div class="card-header" style="background-color: #e0f2fe;">
-            <h3 style="color: #0369a1;"><i class="fas fa-mosque"></i> Ziyarat Raudat Tahera</h3>
-        </div>
-        <div style="padding: var(--spacing-lg); text-align: center;">
-            <p style="margin-bottom: 1rem; color: #0c4a6e;">Perform your Ziyarat and record your presence at Raudat Tahera through the official portal.</p>
-            <a href="https://ziyarat1449.web.app/" target="_blank" class="btn btn-info" style="background-color: #0ea5e9; border-color: #0284c7; padding: 0.75rem 2rem;">
-                <i class="fas fa-external-link-alt"></i> Open Ziyarat Portal
-            </a>
         </div>
     </div>
 

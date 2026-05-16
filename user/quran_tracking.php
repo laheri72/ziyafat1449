@@ -92,6 +92,9 @@ require_once '../includes/header.php';
 
 <div class="container">
     <div class="page-header">
+        <a href="index.php" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 15px; color: #666; text-decoration: none; font-weight: 500; font-size: 14px; padding: 6px 12px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e0e0e0; transition: all 0.2s;">
+            <i class="fas fa-home"></i> Back to Home
+        </a>
         <h1><i class="fas fa-quran"></i> Quran Recitation Tracking</h1>
         <p>Select multiple Juz and save your progress without reloading.</p>
     </div>

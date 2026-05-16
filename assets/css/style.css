@@ -103,6 +103,8 @@ body {
     font-size: 14px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    width: 100%;
 }
 
 /* Layout Structure */
@@ -273,6 +275,7 @@ body {
 
 .main-wrapper {
     flex: 1;
+    min-width: 0;
     margin-left: var(--sidebar-width);
     display: flex;
     flex-direction: column;
@@ -590,6 +593,8 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+    gap: 5px;
 }
 
 .progress-label-text {
@@ -682,6 +687,8 @@ body {
     border: 1px solid var(--border-color);
     margin: var(--spacing-lg) 0;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
 }
 
 table {
