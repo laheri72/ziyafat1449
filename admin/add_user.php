@@ -4,7 +4,7 @@ require_once '../includes/functions.php';
 
 require_admin();
 
-if (!is_admin()) {
+if (!(is_super_admin() || is_amali_coordinator())) {
     header('Location: index.php');
     exit();
 }
@@ -88,7 +88,6 @@ require_once '../includes/header.php';
                     <option value="Marol">Marol</option>
                     <option value="Karachi">Karachi</option>
                     <option value="Nairobi">Nairobi</option>
-                    <option value="Muntasib">Muntasib</option>
                 </select>
             </div>
 

@@ -155,6 +155,7 @@ require_once '../includes/header.php';
             <div class="stat-label">Current Istinsakh</div>
         </div>
 
+        <?php if ($user['category'] === 'Surat'): ?>
         <div class="stat-card" style="border-left: 4px solid #10b981;">
             <div class="stat-card-header">
                 <h4>Contribution Paid</h4>
@@ -165,8 +166,10 @@ require_once '../includes/header.php';
             <div class="stat-value"><?php echo format_currency($contributions['total_inr'], 'INR'); ?></div>
             <div class="stat-label">Remaining: <?php echo format_currency($remaining_inr, 'INR'); ?></div>
         </div>
+        <?php endif; ?>
     </div>
 
+    <?php if ($user['category'] === 'Surat'): ?>
     <!-- Finance Progress Overview -->
     <div class="card" style="border-top: 4px solid #10b981;">
         <div class="card-header">
@@ -181,14 +184,13 @@ require_once '../includes/header.php';
                 <div class="progress-fill" style="width: <?php echo $finance_progress; ?>%; background: linear-gradient(90deg, #10b981, #059669);"></div>
             </div>
         </div>
-        <?php if ($user['category'] === 'Surat'): ?>
         <p class="text-center mt-2">
             <a href="surat_finance_report.php" class="btn btn-success" style="background-color: #10b981; border-color: #059669;">
                 <i class="fas fa-file-invoice-dollar"></i> View Detailed Finance Report
             </a>
         </p>
-        <?php endif; ?>
     </div>
+    <?php endif; ?>
 
     <!-- Quran Progress Overview -->
     <div class="card">

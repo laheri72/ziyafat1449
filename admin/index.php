@@ -12,8 +12,8 @@ $js_path = '../assets/js/';
 $is_finance_admin = has_finance_access();
 $is_amali_admin = has_amali_access();
 
-// Get total users count
-$sql = "SELECT COUNT(*) as total FROM users WHERE (role = 'user' OR role = 'admin') AND its_number NOT LIKE '000000%'";
+// Get total users count for finance
+$sql = "SELECT COUNT(*) as total FROM users WHERE (role = 'user' OR role = 'admin') AND its_number NOT LIKE '000000%' AND category = 'Surat'";
 $result = $conn->query($sql);
 $total_users = $result->fetch_assoc()['total'];
 

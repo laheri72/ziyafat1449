@@ -12,7 +12,7 @@ $js_path = '../assets/js/';
 $settings = get_system_settings($conn);
 
 // Get total members count (users + admins)
-$sql = "SELECT COUNT(*) as total FROM users WHERE role IN ('user', 'admin')";
+$sql = "SELECT COUNT(*) as total FROM users WHERE role IN ('user', 'admin') AND category = 'Surat'";
 $result = $conn->query($sql);
 $total_users = $result->fetch_assoc()['total'];
 
@@ -42,7 +42,7 @@ $sql = "SELECT
             COUNT(c.id) as transaction_count
         FROM users u
         LEFT JOIN contributions c ON u.id = c.user_id
-        WHERE u.role IN ('user', 'admin')
+        WHERE u.role IN ('user', 'admin') AND u.category = 'Surat'
         GROUP BY u.id
         ORDER BY u.tr_number ASC";
 
@@ -60,7 +60,7 @@ $sql = "SELECT
             (? - COALESCE(SUM(c.amount_usd), 0)) as pending_usd
         FROM users u
         LEFT JOIN contributions c ON u.id = c.user_id
-        WHERE u.role IN ('user', 'admin')
+        WHERE u.role IN ('user', 'admin') AND u.category = 'Surat'
         GROUP BY u.id
         HAVING pending_usd > 0
         ORDER BY u.tr_number ASC";

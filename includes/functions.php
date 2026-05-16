@@ -208,15 +208,17 @@ function get_system_settings($conn) {
 function get_all_contributions($conn) {
     // Get total contributions
     $sql = "SELECT 
-                COALESCE(SUM(amount_usd), 0) as total_usd,
-                COALESCE(SUM(amount_inr), 0) as total_inr
-            FROM contributions";
+                COALESCE(SUM(c.amount_usd), 0) as total_usd,
+                COALESCE(SUM(c.amount_inr), 0) as total_inr
+            FROM contributions c
+            JOIN users u ON c.user_id = u.id
+            WHERE u.category = 'Surat'";
     
     $result = $conn->query($sql);
     $data = $result->fetch_assoc();
     
     // Get total users count
-    $sql_users = "SELECT COUNT(*) as total FROM users WHERE role = 'user'";
+    $sql_users = "SELECT COUNT(*) as total FROM users WHERE role = 'user' AND category = 'Surat'";
     $result_users = $conn->query($sql_users);
     $total_users = $result_users->fetch_assoc()['total'];
     

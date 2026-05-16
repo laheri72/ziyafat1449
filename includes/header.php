@@ -90,7 +90,7 @@ init_session();
                                     <span>Users</span>
                                 </a>
                             </div>
-                            <?php if (is_admin()): ?>
+                            <?php if (is_super_admin() || is_amali_coordinator()): ?>
                             <div class="nav-item">
                                 <a href="../admin/add_user.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'add_user.php' ? 'active' : ''; ?>">
                                     <i class="fas fa-user-plus"></i>

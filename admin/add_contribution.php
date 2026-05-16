@@ -10,9 +10,9 @@ $js_path = '../assets/js/';
 
 // Finance access can add contributions for both users and admins.
 if (has_finance_access()) {
-    $sql = "SELECT id, its_number, tr_number, name, role FROM users WHERE role IN ('user', 'admin') ORDER BY role DESC, tr_number ASC";
+    $sql = "SELECT id, its_number, tr_number, name, role FROM users WHERE role IN ('user', 'admin') AND category = 'Surat' ORDER BY role DESC, tr_number ASC";
 } else {
-    $sql = "SELECT id, its_number, tr_number, name, role FROM users WHERE role = 'user' ORDER BY tr_number ASC";
+    $sql = "SELECT id, its_number, tr_number, name, role FROM users WHERE role = 'user' AND category = 'Surat' ORDER BY tr_number ASC";
 }
 $users = $conn->query($sql);
 
