@@ -631,7 +631,7 @@ require_once '../includes/header.php';
                                         <td><?php echo $user_cats['namaz']; ?></td>
                                         <td><?php echo $user['books_completed']; ?></td>
                                         <td>
-                                            <a href="edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></a>
+                                            <a href="edit_user.php?id=<?php echo $user['user_id']; ?>" class="btn btn-sm btn-primary" aria-label="Edit user <?php echo htmlspecialchars($user['name']); ?>" title="Edit user <?php echo htmlspecialchars($user['name']); ?>"><i class="fas fa-edit" aria-hidden="true"></i></a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
