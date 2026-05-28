@@ -8,46 +8,11 @@ require_once __DIR__ . '/PHPMailer/PHPMailer.php';
 require_once __DIR__ . '/PHPMailer/SMTP.php';
 
 /**
- * Send a professional HTML email using PHPMailer and SMTP
- * 
- * @param string $to Recipient email
- * @param string $subject Email subject
- * @param string $body HTML body content
- * @return bool True if sent, False otherwise
+ * Email functionality disabled for Batch 1450
  */
 function send_email($to, $subject, $body) {
-    $config = require __DIR__ . '/../config/mail.php';
-    
-    $mail = new PHPMailer(true);
-
-    try {
-        // Server settings
-        $mail->isSMTP();
-        $mail->Host       = $config['host'];
-        $mail->SMTPAuth   = true;
-        $mail->Username   = $config['username'];
-        $mail->Password   = $config['password'];
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL
-        $mail->Port       = $config['port'];
-        $mail->CharSet    = 'UTF-8';
-
-        // Recipients
-        $mail->setFrom($config['from_email'], $config['from_name']);
-        $mail->addAddress($to);
-
-        // Content
-        $mail->isHTML(true);
-        $mail->Subject = $subject;
-        $mail->Body    = $body;
-        $mail->AltBody = strip_tags($body);
-        $mail->addCustomHeader('Precedence', 'bulk');
-
-        $mail->send();
-        return true;
-    } catch (Exception $e) {
-        error_log("Email sending failed to $to. Error: {$mail->ErrorInfo}");
-        return false;
-    }
+    error_log("Email sending disabled - would send to: $to");
+    return false;
 }
 
 /**

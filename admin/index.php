@@ -394,11 +394,7 @@ require_once '../includes/header.php';
                 <a href="https://ziyarat1449.web.app/" target="_blank" class="btn btn-info" style="background-color: #0ea5e9; color: white;">
                     <i class="fas fa-mosque"></i> Ziyarat Portal
                 </a>
-                <?php if (can_access_broadcast_center()): ?>
-                <a href="broadcast_center.php" class="btn btn-purple" style="background-color: #8b5cf6; color: white;">
-                    <i class="fas fa-bullhorn"></i> Broadcast Center
-                </a>
-                <?php endif; ?>
+                <!-- Broadcast Center Disabled -->
                 <?php if (is_super_admin()): ?>
                 <a href="bulk_amali_entry.php" class="btn btn-dark" style="background-color: #1e293b; color: white;">
                     <i class="fas fa-layer-group"></i> Bulk Amali Entry
