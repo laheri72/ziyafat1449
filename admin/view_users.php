@@ -177,8 +177,9 @@ require_once '../includes/header.php';
                                         <?php if ($user['id'] != $_SESSION['user_id'] && !($is_finance_coordinator && $user['role'] === 'admin')): ?>
                                             <a href="delete_user.php?id=<?php echo $user['id']; ?>" 
                                                class="btn btn-danger btn-sm"
-                                               onclick="return confirm('Are you sure you want to delete this user?')">
-                                                <i class="fas fa-trash"></i>
+                                               onclick="return confirm('Are you sure you want to delete this user?')"
+                                               aria-label="Delete User" title="Delete User">
+                                                <i class="fas fa-trash" aria-hidden="true"></i>
                                             </a>
                                         <?php endif; ?>
                                     </div>
