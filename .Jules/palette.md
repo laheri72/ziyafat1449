@@ -1,0 +1,3 @@
+## 2025-02-12 - Header UI Accessibility Improvements
+**Learning:** In the navigation header, the menu toggle and the search input often lack proper accessibility annotations. The icon-only button `#menuToggle` needs both `aria-label` and `title` to be clear for screen readers and tooltips, while the `<i class="fas...">` elements should have `aria-hidden="true"` to prevent screen readers from reading them out.
+**Action:** When working on navigation or icon-only buttons, always ensure `aria-label`/`title` is on the parent interactive element and `aria-hidden="true"` is on the decorative icon element. Also ensure input fields have `aria-label` or `<label>` elements associated with them.
