@@ -1,0 +1,3 @@
+## 2026-06-20 - Accessible Icon-Only Headers
+**Learning:** Found an accessibility issue pattern specific to this app's components: top navigation header buttons (`#menuToggle` and the search icon) rely heavily on FontAwesome icons without corresponding `aria-label` or `aria-hidden` attributes. This breaks the experience for screen reader users and those navigating via keyboard who need clear interactive context.
+**Action:** When working on navigation bars and headers in this application, ensure that any icon-only elements feature an `aria-label` and `title` (for visual tooltip hints), and hide the pure visual `<i>` tags with `aria-hidden="true"`.
