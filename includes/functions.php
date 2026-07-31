@@ -27,11 +27,11 @@ function is_finance_admin() {
            && isset($_SESSION['admin_type']) && $_SESSION['admin_type'] === 'finance_admin';
 }
 
-// Check if user is amali coordinator
+// Check if user is amali coordinator (Global Amali Coordinator)
 function is_amali_coordinator() {
     init_session();
     return isset($_SESSION['role']) && $_SESSION['role'] === 'admin' 
-           && isset($_SESSION['admin_type']) && $_SESSION['admin_type'] === 'amali_coordinator';
+           && isset($_SESSION['admin_type']) && in_array($_SESSION['admin_type'], ['amali_coordinator', 'amali_cordinator'], true);
 }
 
 // Check if user is category-specific amali coordinator

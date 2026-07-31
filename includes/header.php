@@ -141,6 +141,12 @@ init_session();
                                         <span>Amali Reports</span>
                                     </a>
                                 </div>
+                                <div class="nav-item">
+                                    <a href="../admin/advanced_reports.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'advanced_reports.php' ? 'active' : ''; ?>">
+                                        <i class="fas fa-chart-line"></i>
+                                        <span>Advanced Reports</span>
+                                    </a>
+                                </div>
                             </div>
                         <?php endif; ?>
                     <?php else: ?>
