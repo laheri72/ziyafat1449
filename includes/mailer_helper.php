@@ -88,7 +88,7 @@ function get_email_template($title, $content, $userName, $userId = 0) {
                 <h1>$title</h1>
             </div>
             <div class='content'>
-                <p>Moula (TUS) na Khidmat ma Khush raho, <strong>$userName</strong>,</p>
+                <p>Afzal ul salam <strong>$userName</strong>,</p>
                 $content
                 <center>
                     <a href='$baseUrl/auth/login.php' class='button'>Visit Your Portal</a>

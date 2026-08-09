@@ -62,7 +62,13 @@ init_session();
                             <div class="nav-item">
                                 <a href="../admin/broadcast_center.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'broadcast_center.php' ? 'active' : ''; ?>">
                                     <i class="fas fa-bullhorn"></i>
-                                    <span>Broadcast Center</span>
+                                    <span>Amali Broadcast</span>
+                                </a>
+                            </div>
+                            <div class="nav-item">
+                                <a href="../admin/ziyarat_broadcast.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'ziyarat_broadcast.php' ? 'active' : ''; ?>">
+                                    <i class="fas fa-kaaba"></i>
+                                    <span>Ziyarat Broadcast</span>
                                 </a>
                             </div>
                             <?php endif; ?>

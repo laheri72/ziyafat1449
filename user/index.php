@@ -1,6 +1,7 @@
 <?php
-require_once '../config/database.php';
-require_once '../includes/functions.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/supabase_helper.php';
 
 require_login();
 
@@ -12,6 +13,26 @@ $user_id = $_SESSION['user_id'];
 
 // Get user data
 $user = get_user_by_id($conn, $user_id);
+$tr_number = $user['tr_number'] ?? '';
+
+// Get Ziyarat Flow data from Supabase
+$ziyarat_event_tags = get_supabase_event_tags();
+$active_ziyarat_event = $ziyarat_event_tags[0] ?? 'Active Event';
+$supa_student = get_supabase_student_by_tr($tr_number);
+$ziyarat_event_stats = get_supabase_stats_for_trs([$tr_number], $active_ziyarat_event)[$tr_number] ?? ['assigned' => 0, 'completed' => 0, 'pending' => 0];
+$ziyarat_overall_stats = get_supabase_stats_for_trs([$tr_number])[$tr_number] ?? ['assigned' => 0, 'completed' => 0, 'pending' => 0];
+
+$z_event_assigned = $ziyarat_event_stats['assigned'];
+$z_event_completed = $ziyarat_event_stats['completed'];
+$z_event_pending = $ziyarat_event_stats['pending'];
+$z_event_pct = ($z_event_assigned > 0) ? min(100, round(($z_event_completed / $z_event_assigned) * 100)) : 0;
+
+$z_overall_assigned = $ziyarat_overall_stats['assigned'];
+$z_overall_completed = $ziyarat_overall_stats['completed'];
+$z_overall_pct = ($z_overall_assigned > 0) ? min(100, round(($z_overall_completed / $z_overall_assigned) * 100)) : 0;
+
+$available_in_mumbai = !empty($supa_student['available_in_mumbai']);
+$ziyarat_portal_url = "https://ziyarat1449.web.app/?tr=" . urlencode($tr_number);
 
 // Get Quran progress
 $quran_progress = get_quran_progress($conn, $user_id);
@@ -50,13 +71,79 @@ $contributions = get_user_contributions($conn, $user_id);
 $finance_progress = calculate_percentage($contributions['total_inr'], $settings['target_amount_inr']); 
 $remaining_inr = $settings['target_amount_inr'] - $contributions['total_inr'];
 
-require_once '../includes/header.php';
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="container">
     <div class="page-header">
         <h1><i class="fas fa-home"></i> Welcome, <?php echo htmlspecialchars($user['name']); ?>!</h1>
-        <p>Track your Amali Janib progress</p>
+        <p>Track your Amali Janib & Ziyarat Khidmat progress</p>
+    </div>
+
+    <!-- ZIYARAT RAUDAT TAHERA WIDGET CARD -->
+    <div class="card" style="border-left: 5px solid #2563eb; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <h3><i class="fas fa-kaaba" style="color: #2563eb;"></i> Ziyarat Raudat Tahera Khidmat</h3>
+            <span class="badge" style="background: #e0e7ff; color: #3730a3; font-size: 13px; padding: 6px 12px; border-radius: 20px;">
+                Active Event: <strong><?php echo htmlspecialchars($active_ziyarat_event); ?></strong>
+            </span>
+        </div>
+        <div style="padding: var(--spacing-lg);">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; align-items: center;">
+                <!-- Event Progress Box -->
+                <div style="background: #ffffff; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 13px; color: #64748b; font-weight: 600;"><?php echo htmlspecialchars($active_ziyarat_event); ?> Status</span>
+                        <span style="font-size: 13px; font-weight: bold; color: #2563eb;"><?php echo $z_event_completed; ?> / <?php echo $z_event_assigned; ?> Completed</span>
+                    </div>
+                    <div class="progress-bar" style="height: 10px; background: #e2e8f0; border-radius: 5px; margin-bottom: 8px;">
+                        <div class="progress-fill" style="width: <?php echo $z_event_pct; ?>%; background: linear-gradient(90deg, #2563eb, #1d4ed8);"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                        <span style="color: #475569;"><?php echo $z_event_pct; ?>% Event Progress</span>
+                        <span style="color: <?php echo $z_event_pending > 0 ? '#dc2626' : '#16a34a'; ?>; font-weight: 600;">
+                            <?php echo $z_event_pending > 0 ? "$z_event_pending Pending" : "All Done!"; ?>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Overall Progress Box -->
+                <div style="background: #ffffff; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 13px; color: #64748b; font-weight: 600;">Overall Portal Summary</span>
+                        <span style="font-size: 13px; font-weight: bold; color: #16a34a;"><?php echo $z_overall_completed; ?> / <?php echo $z_overall_assigned; ?> Total</span>
+                    </div>
+                    <div class="progress-bar" style="height: 10px; background: #e2e8f0; border-radius: 5px; margin-bottom: 8px;">
+                        <div class="progress-fill" style="width: <?php echo $z_overall_pct; ?>%; background: #16a34a;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #475569;">
+                        <span>Lifetime Completion Rate</span>
+                        <span><strong><?php echo $z_overall_pct; ?>%</strong></span>
+                    </div>
+                </div>
+
+                <!-- Mumbai Presence Toggle Box -->
+                <div style="background: #ffffff; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="font-size: 13px; color: #64748b; font-weight: 600; margin-bottom: 8px;">Mumbai Presence Status</div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                        <span id="mumbaiStatusBadge" class="badge <?php echo $available_in_mumbai ? 'badge-success' : 'badge-secondary'; ?>" style="font-size: 13px; padding: 6px 10px;">
+                            <i class="fas <?php echo $available_in_mumbai ? 'fa-map-marker-alt' : 'fa-location-crosshairs'; ?>"></i>
+                            <span id="mumbaiStatusText"><?php echo $available_in_mumbai ? 'Available in Mumbai' : 'Not in Mumbai'; ?></span>
+                        </span>
+                        
+                        <button id="toggleMumbaiBtn" class="btn btn-sm <?php echo $available_in_mumbai ? 'btn-secondary' : 'btn-primary'; ?>" onclick="toggleMumbaiPresence(<?php echo $available_in_mumbai ? 0 : 1; ?>)">
+                            <?php echo $available_in_mumbai ? 'Mark Unavailable' : 'Mark Available'; ?>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                <a href="<?php echo $ziyarat_portal_url; ?>" target="_blank" class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); border: none; box-shadow: var(--shadow-md);">
+                    <i class="fas fa-external-link-alt"></i> Launch Ziyarat Portal
+                </a>
+            </div>
+        </div>
     </div>
 
     <!-- Quick Navigation -->
@@ -78,14 +165,13 @@ require_once '../includes/header.php';
                     <i class="fas fa-book" style="font-size: 1.5rem;"></i>
                     <span>Istinsakh Kutub</span>
                 </a>
-                <a href="https://ziyarat1449.web.app/" target="_blank" class="btn" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; flex-direction: column; padding: 1.5rem 1rem; gap: 10px; box-shadow: var(--shadow-md); border: none; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-lg)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-md)';">
+                <a href="<?php echo $ziyarat_portal_url; ?>" target="_blank" class="btn" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; flex-direction: column; padding: 1.5rem 1rem; gap: 10px; box-shadow: var(--shadow-md); border: none; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-lg)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-md)';">
                     <i class="fas fa-mosque" style="font-size: 1.5rem;"></i>
                     <span>Ziyarat Portal</span>
                 </a>
             </div>
         </div>
     </div>
-
 
     <!-- Stats Grid -->
     <div class="stats-grid">
@@ -370,4 +456,50 @@ require_once '../includes/header.php';
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
+<script>
+async function toggleMumbaiPresence(targetStatus) {
+    const btn = document.getElementById('toggleMumbaiBtn');
+    const badge = document.getElementById('mumbaiStatusBadge');
+    const text = document.getElementById('mumbaiStatusText');
+
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('ajax_toggle_mumbai.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `available_in_mumbai=${targetStatus}`
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            const isAvail = result.available_in_mumbai;
+            showToast(result.message, 'success');
+
+            if (isAvail) {
+                badge.className = 'badge badge-success';
+                badge.innerHTML = '<i class="fas fa-map-marker-alt"></i> <span id="mumbaiStatusText">Available in Mumbai</span>';
+                btn.className = 'btn btn-sm btn-secondary';
+                btn.innerText = 'Mark Unavailable';
+                btn.onclick = () => toggleMumbaiPresence(0);
+            } else {
+                badge.className = 'badge badge-secondary';
+                badge.innerHTML = '<i class="fas fa-location-crosshairs"></i> <span id="mumbaiStatusText">Not in Mumbai</span>';
+                btn.className = 'btn btn-sm btn-primary';
+                btn.innerText = 'Mark Available';
+                btn.onclick = () => toggleMumbaiPresence(1);
+            }
+        } else {
+            showToast(result.message || 'Could not update Mumbai presence.', 'error');
+        }
+    } catch (e) {
+        console.error('Error toggling Mumbai availability:', e);
+        showToast('Connection error.', 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+</script>
+
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
