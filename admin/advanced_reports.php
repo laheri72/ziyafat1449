@@ -676,35 +676,281 @@ require_once __DIR__ . '/../includes/header.php';
         background: #ef4444;
     }
 
-    /* Section 6 Print / PDF Export Directives (@media print) */
+    /* Print-Only Element Visibility Defaults */
+    .print-only-summary, .print-only-footer {
+        display: none;
+    }
+
+    /* Section 6 Enterprise Print / PDF Export Directives (@media print) */
+    @page {
+        size: A4 landscape;
+        margin: 6mm 8mm 8mm 8mm;
+    }
+
     @media print {
-        .sidebar, .topbar, .footer, .card-filters, .action-buttons-container, .no-print, header {
+        /* Hide non-printable navigation, buttons and filters */
+        .sidebar, .topbar, .footer, .card-filters, .action-buttons-container, .no-print, header, nav, .btn, .enterprise-header {
             display: none !important;
         }
-        .main-wrapper, .main-content {
-            margin-left: 0 !important;
+
+        /* Un-restrict layout wrappers & reset scroll containers */
+        html, body, .app-layout, .main-wrapper, .main-content, .container, .table-responsive {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
             padding: 0 !important;
+            overflow: visible !important;
+            box-shadow: none !important;
+            border: none !important;
             background: #ffffff !important;
         }
-        .report-table th, .matrix-table th {
-            background-color: #243b53 !important;
-            color: white !important;
+
+        /* Print Header Summary Styling */
+        .print-only-summary {
+            display: block !important;
+            margin-bottom: 12px !important;
+            padding-bottom: 8px !important;
+            border-bottom: 2px solid #1e293b !important;
+        }
+
+        .print-header-top {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: flex-start !important;
+            margin-bottom: 6px !important;
+        }
+
+        .print-title {
+            font-size: 13pt !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+            margin: 0 !important;
+        }
+
+        .print-subtitle {
+            font-size: 8.5pt !important;
+            color: #475569 !important;
+            margin: 2px 0 0 0 !important;
+        }
+
+        .print-meta-right {
+            font-size: 8pt !important;
+            text-align: right !important;
+            color: #475569 !important;
+            line-height: 1.3 !important;
+        }
+
+        .print-filter-bar {
+            font-size: 7.5pt !important;
+            background: #f1f5f9 !important;
+            padding: 4px 8px !important;
+            border-radius: 4px !important;
+            color: #334155 !important;
             border: 1px solid #cbd5e1 !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
-        .report-table td, .matrix-table td {
-            border: 1px solid #cbd5e1 !important;
+
+        /* Compact KPI Stat Cards for Print */
+        .stats-row {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 6px !important;
+            margin-bottom: 10px !important;
         }
+
+        .stat-card {
+            padding: 4px 8px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+            flex: 1 !important;
+            box-shadow: none !important;
+            background: #f8fafc !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .stat-icon {
+            width: 22px !important;
+            height: 22px !important;
+            font-size: 0.75rem !important;
+            border-radius: 4px !important;
+        }
+
+        .stat-details h4 {
+            font-size: 0.9rem !important;
+            margin: 0 !important;
+        }
+
+        .stat-details p {
+            font-size: 0.65rem !important;
+            margin: 0 !important;
+        }
+
+        /* Matrix & Report Tables Responsive Print Scaling */
+        .report-table, .matrix-table {
+            width: 100% !important;
+            table-layout: auto !important;
+            border-collapse: collapse !important;
+            font-size: 7pt !important;
+        }
+
+        .report-table th, .matrix-table th {
+            background-color: #1e293b !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            padding: 4px 4px !important;
+            border: 1px solid #475569 !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            word-break: break-word !important;
+            text-align: center !important;
+            vertical-align: middle !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .report-table td, .matrix-table td {
+            padding: 3px 4px !important;
+            border: 1px solid #cbd5e1 !important;
+            font-size: 7pt !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            word-break: break-word !important;
+            vertical-align: middle !important;
+            text-align: center !important;
+        }
+
+        /* Left align ITS Number and User Name */
+        .report-table td:nth-child(2),
+        .report-table td:nth-child(3),
+        .matrix-table td:nth-child(2),
+        .matrix-table td:nth-child(3) {
+            text-align: left !important;
+        }
+
+        /* Exception Flagging Row Highlighting in Print */
         .report-table tr.flagged-row, .matrix-table tr.flagged-row {
             background-color: #fee2e2 !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
+        .report-table tr.flagged-row td, .matrix-table tr.flagged-row td {
+            color: #991b1b !important;
+            font-weight: 600 !important;
+        }
+
+        /* Ultra-wide reports scaling when there are many columns (7 to 14 columns) */
+        .table-responsive.wide-matrix .report-table,
+        .table-responsive.wide-matrix .matrix-table {
+            font-size: 6.2pt !important;
+        }
+        .table-responsive.wide-matrix .report-table th,
+        .table-responsive.wide-matrix .matrix-table th,
+        .table-responsive.wide-matrix .report-table td,
+        .table-responsive.wide-matrix .matrix-table td {
+            padding: 2px 3px !important;
+            font-size: 6.2pt !important;
+        }
+
+        /* Ultra-wide reports scaling (> 14 columns) */
+        .table-responsive.ultra-wide-matrix .report-table,
+        .table-responsive.ultra-wide-matrix .matrix-table {
+            font-size: 5.5pt !important;
+        }
+        .table-responsive.ultra-wide-matrix .report-table th,
+        .table-responsive.ultra-wide-matrix .matrix-table th,
+        .table-responsive.ultra-wide-matrix .report-table td,
+        .table-responsive.ultra-wide-matrix .matrix-table td {
+            padding: 1px 2px !important;
+            font-size: 5.5pt !important;
+        }
+
+        /* Badges & Mini Progress in Print */
+        .badge-flagged {
+            background-color: #ef4444 !important;
+            color: #ffffff !important;
+            padding: 1px 4px !important;
+            font-size: 6pt !important;
+            border-radius: 2px !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .badge-normal {
+            background-color: #dcfce7 !important;
+            color: #166534 !important;
+            padding: 1px 4px !important;
+            font-size: 6pt !important;
+            border-radius: 2px !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .mini-progress {
+            width: 32px !important;
+            height: 4px !important;
+            margin-right: 2px !important;
+            display: inline-block !important;
+            background-color: #e2e8f0 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .mini-progress-fill {
+            height: 100% !important;
+            background-color: #10b981 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .mini-progress-fill.flagged {
+            background-color: #ef4444 !important;
+        }
+
+        /* Page Break Directives */
+        .report-table tr, .matrix-table tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+        .report-table thead, .matrix-table thead {
+            display: table-header-group !important;
+        }
+        .report-table tfoot, .matrix-table tfoot {
+            display: table-footer-group !important;
+        }
+
+        /* Print Footer Indicator */
+        .print-only-footer {
+            display: flex !important;
+            margin-top: 12px !important;
+            padding-top: 6px !important;
+            border-top: 1px solid #cbd5e1 !important;
+            font-size: 7.5pt !important;
+            color: #64748b !important;
+            justify-content: space-between !important;
+        }
     }
 </style>
 
-<div class="main-content main-wrapper">
+<div class="container">
+    <!-- Print/PDF Header Summary Metadata (Visible only in Print/PDF export mode) -->
+    <div class="print-only-summary">
+        <div class="print-header-top">
+            <div>
+                <h2 class="print-title">Ziyafat us Shukr - Enterprise Advanced Report</h2>
+                <p class="print-subtitle">Report Module: <strong><?php echo strtoupper(htmlspecialchars($report_type)); ?></strong></p>
+            </div>
+            <div class="print-meta-right">
+                <div><strong>Generated:</strong> <?php echo date('d M Y, h:i A'); ?></div>
+                <div><strong>Logged-in Admin:</strong> <?php echo htmlspecialchars($logged_in_user['name'] ?? 'Admin'); ?></div>
+            </div>
+        </div>
+        <div class="print-filter-bar">
+            <span><strong>Branch / Category:</strong> <?php echo htmlspecialchars($filter_branch ?: 'All Branches'); ?></span> &bull; 
+            <span><strong>Classification:</strong> <?php echo htmlspecialchars($classification ?: 'All Classifications'); ?></span> &bull; 
+            <span><strong>Search Query:</strong> <?php echo htmlspecialchars($search ?: 'None'); ?></span> &bull; 
+            <span><strong>Flag Threshold:</strong> <?php echo $threshold; ?>%</span> &bull; 
+            <span><strong>Evaluated Users:</strong> <?php echo count($report_data); ?></span> &bull; 
+            <span><strong>Flagged Count:</strong> <?php echo $flagged_count; ?></span>
+        </div>
+    </div>
     <div class="enterprise-header">
         <div class="enterprise-title">
             <h1><i class="fas fa-chart-line text-primary"></i> Enterprise Advanced Reports</h1>
@@ -902,8 +1148,29 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
     </div>
 
+    <?php
+    $num_active_cols = 0;
+    if ($report_type === 'overall') {
+        $num_active_cols = 4;
+    } elseif (in_array($report_type, ['dua', 'tasbeeh', 'namaz'])) {
+        $num_active_cols = count($active_items ?? []);
+    } elseif ($report_type === 'quran') {
+        $num_active_cols = 3;
+    } elseif ($report_type === 'book') {
+        $num_active_cols = count($active_books ?? []);
+    } elseif ($report_type === 'ziyarat') {
+        $num_active_cols = count($active_mazars ?? []);
+    }
+
+    $matrix_class = '';
+    if ($num_active_cols > 14) {
+        $matrix_class = 'ultra-wide-matrix';
+    } elseif ($num_active_cols > 6) {
+        $matrix_class = 'wide-matrix';
+    }
+    ?>
     <!-- Main Cross-Tabulation Matrix Table -->
-    <div class="table-responsive">
+    <div class="table-responsive <?php echo $matrix_class; ?>">
         <table class="report-table matrix-table">
             <thead>
                 <tr>
@@ -1072,6 +1339,12 @@ require_once __DIR__ . '/../includes/header.php';
                 </tr>
             </tfoot>
         </table>
+    </div>
+
+    <!-- Print/PDF Footer Signature (Visible only in Print/PDF export mode) -->
+    <div class="print-only-footer">
+        <span>Confidential &bull; Ziyafat us Shukr Management System &bull; Enterprise Advanced Reports</span>
+        <span>Generated on <?php echo date('Y-m-d H:i:s'); ?></span>
     </div>
 </div>
 
