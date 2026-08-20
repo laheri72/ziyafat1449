@@ -78,20 +78,38 @@ if ($is_amali_admin) {
     }
     
     // Get Quran and Juz stats
-    $sql_amali = "SELECT 
-                    COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) as total_juz_completed,
-                    FLOOR(COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) / 30) as total_qurans_completed
-                FROM users u
-                LEFT JOIN quran_progress qp ON u.id = qp.user_id" . $where_sql_data;
+    $sql_amali_juz = "SELECT 
+                        COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) as total_juz_completed
+                    FROM users u
+                    LEFT JOIN quran_progress qp ON u.id = qp.user_id" . $where_sql_data;
+    
+    $sql_amali_qurans = "SELECT COUNT(*) as total_qurans_completed FROM (
+                            SELECT qp.user_id, qp.quran_number
+                            FROM users u
+                            JOIN quran_progress qp ON u.id = qp.user_id" . $where_sql_data . " AND qp.is_completed = 1
+                            GROUP BY qp.user_id, qp.quran_number
+                            HAVING COUNT(DISTINCT qp.juz_number) = 30
+                        ) full_qurans";
     
     if (!empty($params_data)) {
-        $stmt = $conn->prepare($sql_amali);
-        $stmt->bind_param("s", $params_data[0]);
-        $stmt->execute();
-        $amali_stats = $stmt->get_result()->fetch_assoc();
+        $stmt_juz = $conn->prepare($sql_amali_juz);
+        $stmt_juz->bind_param("s", $params_data[0]);
+        $stmt_juz->execute();
+        $juz_completed = $stmt_juz->get_result()->fetch_assoc()['total_juz_completed'];
+
+        $stmt_qurans = $conn->prepare($sql_amali_qurans);
+        $stmt_qurans->bind_param("s", $params_data[0]);
+        $stmt_qurans->execute();
+        $qurans_completed = $stmt_qurans->get_result()->fetch_assoc()['total_qurans_completed'];
     } else {
-        $amali_stats = $conn->query($sql_amali)->fetch_assoc();
+        $juz_completed = $conn->query($sql_amali_juz)->fetch_assoc()['total_juz_completed'];
+        $qurans_completed = $conn->query($sql_amali_qurans)->fetch_assoc()['total_qurans_completed'];
     }
+
+    $amali_stats = [
+        'total_juz_completed' => $juz_completed,
+        'total_qurans_completed' => $qurans_completed
+    ];
     
     // Get Dua, Tasbeeh, Namaz stats
     $sql_categories = "SELECT 

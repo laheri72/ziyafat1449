@@ -167,14 +167,25 @@ require_once '../includes/header.php';
         // Build SQL with category filter and sorting
         $sql = "SELECT u.id as user_id, u.name, u.its_number, u.category, u.classification, u.email, u.phone_number,
                     COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.quran_number, '-', qp.juz_number) END) as completed_juz,
-                    FLOOR(COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.quran_number, '-', qp.juz_number) END) / 30) as completed_qurans,
+                    COALESCE(q_full.full_qurans, 0) as completed_qurans,
                     COUNT(DISTINCT CASE WHEN bt.status = 'completed' THEN bt.book_id END) as books_completed,
                     COUNT(DISTINCT CASE WHEN bt.status = 'selected' THEN bt.book_id END) as books_in_progress
                 FROM users u
                 LEFT JOIN quran_progress qp ON u.id = qp.user_id
+                LEFT JOIN (
+                    SELECT user_id, COUNT(*) as full_qurans
+                    FROM (
+                        SELECT user_id, quran_number
+                        FROM quran_progress
+                        WHERE is_completed = 1
+                        GROUP BY user_id, quran_number
+                        HAVING COUNT(DISTINCT juz_number) = 30
+                    ) fq
+                    GROUP BY user_id
+                ) q_full ON u.id = q_full.user_id
                 LEFT JOIN book_transcription bt ON u.id = bt.user_id
                 WHERE (u.role = 'user' OR u.role = 'admin') AND u.its_number NOT LIKE '000000%'" . $category_filter_sql . $classification_filter_sql . "
-                GROUP BY u.id, u.name, u.its_number, u.category, u.classification, u.email, u.phone_number";
+                GROUP BY u.id, u.name, u.its_number, u.category, u.classification, u.email, u.phone_number, q_full.full_qurans";
 
         // Add sorting (Note: overall_progress is calculated in PHP, so we'll sort that later)
         $order_by = "u.name";
@@ -218,7 +229,6 @@ require_once '../includes/header.php';
         $sql = "SELECT 
                     COUNT(DISTINCT CASE WHEN (u.role = 'user' OR u.role = 'admin') AND u.its_number NOT LIKE '000000%' THEN u.id END) as total_users,
                     COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) as total_juz_completed,
-                    FLOOR(COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.user_id, '-', qp.quran_number, '-', qp.juz_number) END) / 30) as total_qurans_completed,
                     COUNT(DISTINCT CASE WHEN bt.status = 'completed' THEN CONCAT(bt.user_id, '-', bt.book_id) END) as total_books_completed
                 FROM users u
                 LEFT JOIN quran_progress qp ON u.id = qp.user_id
@@ -226,6 +236,17 @@ require_once '../includes/header.php';
                 WHERE $where_clause";
 
         $overall_stats = $conn->query($sql)->fetch_assoc();
+
+        $sql_qurans_completed = "SELECT COUNT(*) as total_qurans_completed FROM (
+                                    SELECT qp.user_id, qp.quran_number
+                                    FROM users u
+                                    JOIN quran_progress qp ON u.id = qp.user_id
+                                    WHERE $where_clause AND qp.is_completed = 1
+                                    GROUP BY qp.user_id, qp.quran_number
+                                    HAVING COUNT(DISTINCT qp.juz_number) = 30
+                                ) full_qurans";
+        $total_qurans_res = $conn->query($sql_qurans_completed)->fetch_assoc();
+        $overall_stats['total_qurans_completed'] = $total_qurans_res['total_qurans_completed'] ?? 0;
 
         // Keep category totals in same scope as overall summary to avoid dashboard/report drift.
         $sql_categories = "SELECT 

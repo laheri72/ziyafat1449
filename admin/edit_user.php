@@ -126,7 +126,15 @@ require_once '../includes/header.php';
             // Get user's activity stats
             $sql = "SELECT 
                         COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.quran_number, '-', qp.juz_number) END) as completed_juz,
-                        FLOOR(COUNT(DISTINCT CASE WHEN qp.is_completed = 1 THEN CONCAT(qp.quran_number, '-', qp.juz_number) END) / 30) as completed_qurans,
+                        COALESCE((
+                            SELECT COUNT(*) FROM (
+                                SELECT quran_number 
+                                FROM quran_progress 
+                                WHERE user_id = ? AND is_completed = 1 
+                                GROUP BY quran_number 
+                                HAVING COUNT(DISTINCT juz_number) = 30
+                            ) q_full
+                        ), 0) as completed_qurans,
                         COUNT(DISTINCT CASE WHEN bt.status = 'completed' THEN bt.book_id END) as books_completed,
                         COUNT(DISTINCT CASE WHEN bt.status = 'selected' THEN bt.book_id END) as books_in_progress
                     FROM users u
@@ -134,7 +142,7 @@ require_once '../includes/header.php';
                     LEFT JOIN book_transcription bt ON u.id = bt.user_id
                     WHERE u.id = ?";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("i", $user_id);
+            $stmt->bind_param("ii", $user_id, $user_id);
             $stmt->execute();
             $stats = $stmt->get_result()->fetch_assoc();
 

@@ -417,11 +417,19 @@ function get_amali_summary($conn, $user_id) {
     // Get Quran progress
     $sql_quran = "SELECT 
                     COUNT(DISTINCT CASE WHEN is_completed = 1 THEN CONCAT(quran_number, '-', juz_number) END) as completed_juz,
-                    FLOOR(COUNT(DISTINCT CASE WHEN is_completed = 1 THEN CONCAT(quran_number, '-', juz_number) END) / 30) as completed_qurans
+                    COALESCE((
+                        SELECT COUNT(*) FROM (
+                            SELECT quran_number 
+                            FROM quran_progress 
+                            WHERE user_id = ? AND is_completed = 1 
+                            GROUP BY quran_number 
+                            HAVING COUNT(DISTINCT juz_number) = 30
+                        ) q_full
+                    ), 0) as completed_qurans
                   FROM quran_progress 
                   WHERE user_id = ?";
     $stmt = $conn->prepare($sql_quran);
-    $stmt->bind_param("i", $user_id);
+    $stmt->bind_param("ii", $user_id, $user_id);
     $stmt->execute();
     $quran_data = $stmt->get_result()->fetch_assoc();
     

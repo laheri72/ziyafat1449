@@ -252,10 +252,16 @@ if ($report_type === 'overall') {
         ];
     }
 } elseif ($report_type === 'quran') {
+    $full_quran_map = [];
+    $fq_res = mysqli_query($conn, "SELECT user_id, COUNT(*) as full_qurans FROM (SELECT user_id, quran_number FROM quran_progress WHERE is_completed = 1 GROUP BY user_id, quran_number HAVING COUNT(DISTINCT juz_number) = 30) fq GROUP BY user_id");
+    while ($r = mysqli_fetch_assoc($fq_res)) {
+        $full_quran_map[$r['user_id']] = intval($r['full_qurans']);
+    }
+
     foreach ($users as $user) {
         $uid = $user['user_id'];
         $completed_juz = $quran_map[$uid] ?? 0;
-        $completed_qurans = floor($completed_juz / 30);
+        $completed_qurans = $full_quran_map[$uid] ?? 0;
         $quran_pct = min(100.0, ($completed_juz / 120.0) * 100.0);
 
         $is_flagged = ($quran_pct < $threshold);
