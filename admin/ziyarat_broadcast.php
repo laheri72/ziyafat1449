@@ -91,7 +91,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
         <div>
             <h1><i class="fas fa-kaaba"></i> Ziyarat Raudat Tahera Broadcast Center</h1>
-            <p>Send targeted reminders and Mumbai availability alerts to Talabat.</p>
+            <p>Send targeted reminders and event updates to assigned Talabat.</p>
         </div>
         <div style="margin-top: 10px;">
             <a href="broadcast_center.php" class="btn btn-secondary"><i class="fas fa-bullhorn"></i> Amali Broadcast Center</a>
@@ -132,9 +132,8 @@ require_once __DIR__ . '/../includes/header.php';
                 <div>
                     <?php
                     $type_labels = [
-                        'standard' => ['badge' => 'badge-primary', 'label' => 'Standard Progress'],
-                        'mumbai_prompt' => ['badge' => 'badge-warning', 'label' => 'Mumbai Availability Check'],
-                        'mumbai_alert' => ['badge' => 'badge-danger', 'label' => 'Mumbai Urgent Alert']
+                        'standard' => ['badge' => 'badge-primary', 'label' => 'Standard Announcement'],
+                        'mumbai_alert' => ['badge' => 'badge-danger', 'label' => 'Urgent Pending Alert']
                     ];
                     $t_info = $type_labels[$active_campaign['campaign_type'] ?? 'standard'] ?? $type_labels['standard'];
                     ?>
@@ -178,10 +177,10 @@ require_once __DIR__ . '/../includes/header.php';
                         <div class="form-group" style="margin-bottom: 0; min-width: 250px;">
                             <label for="audience_filter"><i class="fas fa-filter" style="color: #2563eb;"></i> Audience Filter <span id="statsSpinner" style="display:none; font-size: 0.85rem; color: #2563eb;"><i class="fas fa-spinner fa-spin"></i></span></label>
                             <select id="audience_filter" class="form-control" onchange="updateRecommendationAnalysis()">
-                                <option value="all">All Eligible Students</option>
-                                <option value="mumbai_only" <?php echo ($active_campaign['campaign_type'] === 'mumbai_alert') ? 'selected' : ''; ?>>Available in Mumbai Only</option>
-                                <option value="not_mumbai_only" <?php echo ($active_campaign['campaign_type'] === 'mumbai_prompt') ? 'selected' : ''; ?>>NOT in Mumbai / Unset Only</option>
-                                <option value="pending_only">Pending Ziyarat Only</option>
+                                <option value="pending_only" <?php echo ($active_campaign['campaign_type'] === 'mumbai_alert') ? 'selected' : ''; ?>>Pending Ziyarat Only</option>
+                                <option value="all" <?php echo ($active_campaign['campaign_type'] === 'standard') ? 'selected' : ''; ?>>All Eligible Students</option>
+                                <option value="mumbai_only">Available in Mumbai Only</option>
+                                <option value="not_mumbai_only">NOT in Mumbai / Unset Only</option>
                             </select>
                         </div>
 
@@ -208,7 +207,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </form>
                 </div>
 
-                <!-- SENIOR DEVELOPER LIVE AUDIENCE ANALYSIS & BATCH SIZE RECOMMENDATION PANEL -->
+                <!-- LIVE AUDIENCE ANALYSIS & BATCH SIZE RECOMMENDATION PANEL -->
                 <div id="liveAnalysisPanel" style="margin-top: 15px; padding: 15px; border-radius: 8px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a;">
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                         <h4 style="margin: 0; font-size: 1rem; color: #1e40af;"><i class="fas fa-chart-pie"></i> Audience & Daily SMTP Limit Analysis</h4>
@@ -270,15 +269,14 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="form-group">
                 <label for="campaign_type"><i class="fas fa-bullhorn"></i> Campaign Type & Template</label>
                 <select id="campaign_type" name="campaign_type" class="form-control" onchange="updateSubjectDefault(this.value)" <?php echo $active_campaign ? 'disabled' : ''; ?> required>
-                    <option value="standard">Standard Ziyarat Progress Reminder</option>
-                    <option value="mumbai_prompt">Mumbai Presence Check (Ask Students to Mark Availability)</option>
-                    <option value="mumbai_alert">Urgent Ziyarat Alert (Students Present in Mumbai Only)</option>
+                    <option value="standard">Standard Ziyarat Progress & Announcement</option>
+                    <option value="mumbai_alert">Urgent Pending Ziyarat Alert (Remind Unfinished Tasks)</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label for="subject"><i class="fas fa-heading"></i> Email Subject Line</label>
-                <input type="text" id="subject" name="subject" class="form-control" value="Ziyarat Raudat Tahera Reminder - <?php echo htmlspecialchars($current_event_tag); ?>" <?php echo $active_campaign ? 'disabled' : ''; ?> required>
+                <input type="text" id="subject" name="subject" class="form-control" value="Ziyarat Raudat Tahera Announcement - <?php echo htmlspecialchars($current_event_tag); ?>" <?php echo $active_campaign ? 'disabled' : ''; ?> required>
             </div>
 
             <div class="form-group">
@@ -289,7 +287,7 @@ require_once __DIR__ . '/../includes/header.php';
 
             <div class="form-group">
                 <label for="custom_message"><i class="fas fa-comment-alt"></i> Custom Note / Instructions (Optional)</label>
-                <textarea id="custom_message" name="custom_message" class="form-control" rows="3" placeholder="e.g., Please ensure Ziyarat is completed before Friday..." <?php echo $active_campaign ? 'disabled' : ''; ?>></textarea>
+                <textarea id="custom_message" name="custom_message" class="form-control" rows="3" placeholder="e.g., Please fill/tick the names in the website so that we can have a clean record..." <?php echo $active_campaign ? 'disabled' : ''; ?>></textarea>
             </div>
 
             <button type="submit" name="create_ziyarat_campaign" class="btn btn-primary" <?php echo $active_campaign ? 'disabled title="Archive current campaign first"' : ''; ?>>
@@ -367,12 +365,10 @@ function updateSubjectDefault(type) {
     const subjectInput = document.getElementById('subject');
     if (!subjectInput) return;
     
-    if (type === 'mumbai_prompt') {
-        subjectInput.value = `Urgent: Update your Mumbai Availability for ${activeEventTag}`;
-    } else if (type === 'mumbai_alert') {
-        subjectInput.value = `Urgent: You are in Mumbai! Perform Ziyarat for ${activeEventTag}`;
+    if (type === 'mumbai_alert') {
+        subjectInput.value = `Urgent: Perform Ziyarat / Update Status for ${activeEventTag}`;
     } else {
-        subjectInput.value = `Ziyarat Raudat Tahera Reminder - ${activeEventTag}`;
+        subjectInput.value = `Ziyarat Raudat Tahera Announcement - ${activeEventTag}`;
     }
 }
 
@@ -399,10 +395,10 @@ async function loadAudienceStats(campaignId) {
             // Update audience dropdown option labels with exact live counts
             const currentSelectedAudience = audienceSelect.value;
             audienceSelect.innerHTML = `
+                <option value="pending_only" ${currentSelectedAudience === 'pending_only' ? 'selected' : ''}>Pending Ziyarat Only (${res.stats.pending_only})</option>
                 <option value="all" ${currentSelectedAudience === 'all' ? 'selected' : ''}>All Eligible Students (${res.stats.all})</option>
                 <option value="mumbai_only" ${currentSelectedAudience === 'mumbai_only' ? 'selected' : ''}>Available in Mumbai Only (${res.stats.mumbai_only})</option>
                 <option value="not_mumbai_only" ${currentSelectedAudience === 'not_mumbai_only' ? 'selected' : ''}>NOT in Mumbai / Unset Only (${res.stats.not_mumbai_only})</option>
-                <option value="pending_only" ${currentSelectedAudience === 'pending_only' ? 'selected' : ''}>Pending Ziyarat Only (${res.stats.pending_only})</option>
             `;
 
             // Update branch dropdown option labels if available
@@ -455,11 +451,11 @@ function updateRecommendationAnalysis() {
         recommendedBatch = 0;
         if (sendBtn) sendBtn.disabled = true;
     } else if (targetCount <= quota) {
-        recommendationMsg = `<strong>💡 Senior Developer Analysis & Recommendation:</strong> Target audience is <strong>${targetCount} students</strong> in <strong>${branchText}</strong>. Since you have <strong>${quota} remaining daily SMTP slots</strong>, you can safely send all <strong>${targetCount} emails</strong> in 1 batch.`;
+        recommendationMsg = `<strong>💡 Recommendation (Safe Batch):</strong> Target audience is <strong>${targetCount} students</strong> in <strong>${branchText}</strong>. Since you have <strong>${quota} remaining daily SMTP slots</strong>, you can safely send all <strong>${targetCount} emails</strong> in 1 batch.`;
         recommendedBatch = targetCount;
         if (sendBtn) sendBtn.disabled = false;
     } else {
-        recommendationMsg = `<strong>⚠️ Senior Developer Analysis & Recommendation:</strong> Target audience is <strong>${targetCount} students</strong> in <strong>${branchText}</strong>, but today's remaining SMTP capacity is <strong>${quota} mails</strong> (capped at 100/24h). Recommended max batch size for today is <strong>${quota}</strong>. The remaining <strong>${targetCount - quota} students</strong> should be dispatched tomorrow after quota resets.`;
+        recommendationMsg = `<strong>⚠️ Recommendation (Batch Capped by Quota):</strong> Target audience is <strong>${targetCount} students</strong> in <strong>${branchText}</strong>, but today's remaining SMTP capacity is <strong>${quota} mails</strong> (capped at 100/24h). Recommended max batch size for today is <strong>${quota}</strong>. The remaining <strong>${targetCount - quota} students</strong> should be dispatched tomorrow after quota resets.`;
         recommendedBatch = quota;
         if (sendBtn) sendBtn.disabled = false;
     }

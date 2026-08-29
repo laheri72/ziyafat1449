@@ -4,7 +4,7 @@ require_once __DIR__ . '/mailer_helper.php';
 /**
  * Generate a professional HTML email template wrapper specifically for Ziyarat Raudat Tahera broadcasts
  * 
- * @param string $campaignType - 'standard', 'mumbai_prompt', 'mumbai_alert'
+ * @param string $campaignType - 'standard', 'mumbai_alert'
  */
 function get_ziyarat_email_template($eventTag, $userName, $userId, $trNumber, $eventStats, $overallStats, $targetCount = 30, $customNote = '', $campaignType = 'standard') {
     $config = require __DIR__ . '/../config/mail.php';
@@ -34,7 +34,7 @@ function get_ziyarat_email_template($eventTag, $userName, $userId, $trNumber, $e
     if (!empty($customNote)) {
         $customNoteHtml = "
         <div style='background: #eff6ff; border-left: 4px solid #2563eb; padding: 14px; border-radius: 6px; margin: 15px 0; color: #1e40af;'>
-            <strong>Note from Management:</strong><br>
+            <strong>Important Note from Management:</strong><br>
             " . nl2br(htmlspecialchars($customNote)) . "
         </div>";
     }
@@ -43,55 +43,20 @@ function get_ziyarat_email_template($eventTag, $userName, $userId, $trNumber, $e
     $headerSub = "Event: " . htmlspecialchars($eventTag);
     $headerBg = "linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)";
 
-    if ($campaignType === 'mumbai_prompt') {
-        $headerTitle = "Mumbai Presence Check";
-        $headerSub = "Action Required for " . htmlspecialchars($eventTag);
-        $headerBg = "linear-gradient(135deg, #d97706 0%, #78350f 100%)";
-
-        $content = "
-        <p>Afzal us Salam <strong>" . htmlspecialchars($userName) . "</strong>,</p>
-
-        <p>We are currently organizing beneficiary assignments for <strong>" . htmlspecialchars($eventTag) . "</strong> at Raudat Tahera.</p>
-
-        <div style='background: #fffbeb; border: 2px solid #f59e0b; border-radius: 8px; padding: 18px; margin: 20px 0; color: #78350f;'>
-            <h3 style='margin-top: 0; color: #b45309; font-size: 17px;'>Are you currently present in Mumbai?</h3>
-            <p style='margin-bottom: 0; font-size: 14px; line-height: 1.5;'>
-                Please confirm your availability status so we can allocate Karachi HOF Mumineen for your Ziyarat Khidmat list.
-            </p>
-        </div>
-
-        $customNoteHtml
-
-        <div style='background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; margin: 15px 0; font-size: 13px;'>
-            <strong>Current Event Status ($eventTag):</strong><br>
-            • Assigned to You: <strong>{$assignedCount} Mumineen</strong><br>
-            • Pending Ziyarats: <strong>{$pendingCount} Mumineen</strong>
-        </div>
-
-        <p style='text-align: center; margin-top: 25px; margin-bottom: 15px;'>
-            <a href='{$ziyaratPortalUrl}' style='display: inline-block; padding: 14px 28px; background-color: #d97706; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px;'>
-                Update Mumbai Availability Status
-            </a>
-        </p>
-
-        <p style='text-align: center; font-size: 12px; color: #64748b;'>
-            Or toggle directly from your dashboard: <a href='{$dashboardUrl}' style='color: #d97706; text-decoration: underline;'>Open Ziyafat Dashboard</a>
-        </p>
-        ";
-    } elseif ($campaignType === 'mumbai_alert') {
-        $headerTitle = "Urgent: Ziyarat Khidmat Alert";
-        $headerSub = "You are in Mumbai for " . htmlspecialchars($eventTag);
+    if ($campaignType === 'mumbai_alert') {
+        $headerTitle = "Urgent Ziyarat Khidmat Alert";
+        $headerSub = "Pending Ziyarat Tasks for " . htmlspecialchars($eventTag);
         $headerBg = "linear-gradient(135deg, #dc2626 0%, #7f1d1d 100%)";
 
         $content = "
         <p>Afzal us Salam <strong>" . htmlspecialchars($userName) . "</strong>,</p>
 
-        <p>According to your status, you are currently <strong>present in Mumbai</strong> for <strong>" . htmlspecialchars($eventTag) . "</strong>.</p>
+        <p>This is an urgent reminder regarding your assigned Mumineen for <strong>" . htmlspecialchars($eventTag) . "</strong> at Raudat Tahera.</p>
 
         <div style='background: #fef2f2; border: 2px solid #ef4444; border-radius: 8px; padding: 18px; margin: 20px 0;'>
-            <h3 style='margin-top: 0; color: #b91c1c; font-size: 17px;'>Urgent Reminder for Raudat Tahera Ziyarat</h3>
+            <h3 style='margin-top: 0; color: #b91c1c; font-size: 17px;'>Urgent Action Required</h3>
             <p style='margin-bottom: 10px; font-size: 14px; color: #7f1d1d;'>
-                You have <strong>{$pendingCount} pending Ziyarat assignments</strong> waiting to be completed for this event.
+                You have <strong>{$pendingCount} pending Ziyarat assignments</strong> waiting to be completed or updated for this event.
             </p>
             <div style='height: 10px; background: #fee2e2; border-radius: 5px; overflow: hidden;'>
                 <div style='height: 100%; width: {$eventPct}%; background: #dc2626;'></div>
@@ -106,7 +71,7 @@ function get_ziyarat_email_template($eventTag, $userName, $userId, $trNumber, $e
 
         <p style='text-align: center; margin-top: 25px; margin-bottom: 15px;'>
             <a href='{$ziyaratPortalUrl}' style='display: inline-block; padding: 14px 28px; background-color: #dc2626; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px;'>
-                Open Ziyarat List & Mark Completed
+                Open Ziyarat Portal & Update Status
             </a>
         </p>
 
@@ -115,7 +80,7 @@ function get_ziyarat_email_template($eventTag, $userName, $userId, $trNumber, $e
         </p>
         ";
     } else {
-        // Standard Ziyarat Progress Campaign
+        // Standard Ziyarat Progress & Announcement Campaign
         if ($assignedCount > 0 && $pendingCount === 0) {
             $eventStatusBg = '#dcfce7'; $eventStatusText = '#166534'; $eventStatusLabel = 'Completed for Event!';
         } elseif ($assignedCount > 0) {
@@ -127,7 +92,7 @@ function get_ziyarat_email_template($eventTag, $userName, $userId, $trNumber, $e
         $content = "
         <p>Afzal us Salam <strong>" . htmlspecialchars($userName) . "</strong>,</p>
 
-        <p>This is a reminder regarding your <strong>Ziyarat Raudat Tahera Khidmat</strong> for <strong>" . htmlspecialchars($eventTag) . "</strong>.</p>
+        <p>This is an official announcement and progress update regarding your <strong>Ziyarat Raudat Tahera Khidmat</strong> for <strong>" . htmlspecialchars($eventTag) . "</strong>.</p>
         
         $customNoteHtml
 
