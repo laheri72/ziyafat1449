@@ -162,21 +162,32 @@ require_once __DIR__ . '/../includes/header.php';
                     <?php endif; ?>
                 </div>
 
-                <div class="action-buttons" style="flex-wrap: wrap; align-items: flex-end; gap: 15px;">
+                <div class="action-buttons" style="flex-wrap: wrap; align-items: flex-end; gap: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                     <?php if ($sent_students < $total_students): ?>
-                        <div class="form-group" style="margin-bottom: 0; min-width: 130px;">
-                            <label for="manual_batch_size">Batch Size</label>
-                            <input type="number" id="manual_batch_size" class="form-control" value="<?php echo min($remaining_today, 10); ?>" min="1" max="<?php echo $remaining_today; ?>">
+                        <div class="form-group" style="margin-bottom: 0; min-width: 170px;">
+                            <label for="branch_filter"><i class="fas fa-building" style="color: #2563eb;"></i> Student Branch</label>
+                            <select id="branch_filter" class="form-control" onchange="loadAudienceStats(<?php echo $active_campaign['id']; ?>)">
+                                <option value="all">All Branches (Global)</option>
+                                <option value="Marol">Marol</option>
+                                <option value="Surat">Surat</option>
+                                <option value="Nairobi">Nairobi</option>
+                                <option value="Karachi">Karachi</option>
+                            </select>
                         </div>
-                        
-                        <div class="form-group" style="margin-bottom: 0; min-width: 210px;">
-                            <label for="audience_filter">Audience Filter</label>
-                            <select id="audience_filter" class="form-control">
+
+                        <div class="form-group" style="margin-bottom: 0; min-width: 250px;">
+                            <label for="audience_filter"><i class="fas fa-filter" style="color: #2563eb;"></i> Audience Filter <span id="statsSpinner" style="display:none; font-size: 0.85rem; color: #2563eb;"><i class="fas fa-spinner fa-spin"></i></span></label>
+                            <select id="audience_filter" class="form-control" onchange="updateRecommendationAnalysis()">
                                 <option value="all">All Eligible Students</option>
                                 <option value="mumbai_only" <?php echo ($active_campaign['campaign_type'] === 'mumbai_alert') ? 'selected' : ''; ?>>Available in Mumbai Only</option>
                                 <option value="not_mumbai_only" <?php echo ($active_campaign['campaign_type'] === 'mumbai_prompt') ? 'selected' : ''; ?>>NOT in Mumbai / Unset Only</option>
                                 <option value="pending_only">Pending Ziyarat Only</option>
                             </select>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0; min-width: 120px;">
+                            <label for="manual_batch_size"><i class="fas fa-calculator" style="color: #2563eb;"></i> Batch Size</label>
+                            <input type="number" id="manual_batch_size" class="form-control" value="<?php echo min($remaining_today, 10); ?>" min="1" max="<?php echo $remaining_today; ?>">
                         </div>
 
                         <button id="sendBatchBtn" class="btn btn-primary btn-lg" <?php echo $remaining_today == 0 ? 'disabled' : ''; ?> onclick="startZiyaratBatchSend(<?php echo $active_campaign['id']; ?>)">
@@ -195,6 +206,17 @@ require_once __DIR__ . '/../includes/header.php';
                     <form method="POST" action="" onsubmit="return confirm('Archive this Ziyarat campaign and start fresh?')">
                         <button type="submit" name="archive_ziyarat_campaign" class="btn btn-secondary">Archive Campaign</button>
                     </form>
+                </div>
+
+                <!-- SENIOR DEVELOPER LIVE AUDIENCE ANALYSIS & BATCH SIZE RECOMMENDATION PANEL -->
+                <div id="liveAnalysisPanel" style="margin-top: 15px; padding: 15px; border-radius: 8px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <h4 style="margin: 0; font-size: 1rem; color: #1e40af;"><i class="fas fa-chart-pie"></i> Audience & Daily SMTP Limit Analysis</h4>
+                        <span class="badge badge-info" id="analysisTargetBadge" style="font-size: 0.85rem; padding: 5px 10px;">Target: Calculating...</span>
+                    </div>
+                    <p id="analysisText" style="margin: 10px 0 0 0; font-size: 0.95rem; line-height: 1.5; color: #1e3a8a;">
+                        Fetching live audience stats from Ziyarat Flow & MySQL...
+                    </p>
                 </div>
 
                 <div id="batchProgress" style="display:none; margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 20px;">
@@ -337,6 +359,9 @@ require_once __DIR__ . '/../includes/header.php';
 
 <script>
 const activeEventTag = <?php echo json_encode($current_event_tag); ?>;
+const activeCampaignId = <?php echo $active_campaign ? $active_campaign['id'] : 0; ?>;
+const remainingTodayQuota = <?php echo $remaining_today; ?>;
+let currentStatsData = null;
 
 function updateSubjectDefault(type) {
     const subjectInput = document.getElementById('subject');
@@ -351,9 +376,106 @@ function updateSubjectDefault(type) {
     }
 }
 
+async function loadAudienceStats(campaignId) {
+    if (!campaignId) return;
+    const branchFilter = document.getElementById('branch_filter').value;
+    const spinner = document.getElementById('statsSpinner');
+    const audienceSelect = document.getElementById('audience_filter');
+    const branchSelect = document.getElementById('branch_filter');
+
+    if (spinner) spinner.style.display = 'inline-block';
+
+    try {
+        const response = await fetch('ajax_ziyarat_broadcast.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `campaign_id=${campaignId}&action=get_audience_stats&branch_filter=${encodeURIComponent(branchFilter)}`
+        });
+        const res = await response.json();
+
+        if (res.success && res.stats) {
+            currentStatsData = res;
+
+            // Update audience dropdown option labels with exact live counts
+            const currentSelectedAudience = audienceSelect.value;
+            audienceSelect.innerHTML = `
+                <option value="all" ${currentSelectedAudience === 'all' ? 'selected' : ''}>All Eligible Students (${res.stats.all})</option>
+                <option value="mumbai_only" ${currentSelectedAudience === 'mumbai_only' ? 'selected' : ''}>Available in Mumbai Only (${res.stats.mumbai_only})</option>
+                <option value="not_mumbai_only" ${currentSelectedAudience === 'not_mumbai_only' ? 'selected' : ''}>NOT in Mumbai / Unset Only (${res.stats.not_mumbai_only})</option>
+                <option value="pending_only" ${currentSelectedAudience === 'pending_only' ? 'selected' : ''}>Pending Ziyarat Only (${res.stats.pending_only})</option>
+            `;
+
+            // Update branch dropdown option labels if available
+            if (res.branch_counts) {
+                const bCounts = res.branch_counts;
+                const currentBranchVal = branchSelect.value;
+                branchSelect.innerHTML = `
+                    <option value="all" ${currentBranchVal === 'all' ? 'selected' : ''}>All Branches (${bCounts.all || 0})</option>
+                    <option value="Marol" ${currentBranchVal === 'Marol' ? 'selected' : ''}>Marol (${bCounts.Marol || 0})</option>
+                    <option value="Surat" ${currentBranchVal === 'Surat' ? 'selected' : ''}>Surat (${bCounts.Surat || 0})</option>
+                    <option value="Nairobi" ${currentBranchVal === 'Nairobi' ? 'selected' : ''}>Nairobi (${bCounts.Nairobi || 0})</option>
+                    <option value="Karachi" ${currentBranchVal === 'Karachi' ? 'selected' : ''}>Karachi (${bCounts.Karachi || 0})</option>
+                `;
+            }
+
+            updateRecommendationAnalysis();
+        }
+    } catch (e) {
+        console.error('Error fetching audience stats:', e);
+    } finally {
+        if (spinner) spinner.style.display = 'none';
+    }
+}
+
+function updateRecommendationAnalysis() {
+    if (!currentStatsData) return;
+
+    const audienceVal = document.getElementById('audience_filter').value;
+    const branchSelect = document.getElementById('branch_filter');
+    const branchText = branchSelect.options[branchSelect.selectedIndex] ? branchSelect.options[branchSelect.selectedIndex].text : 'Selected Branch';
+    const batchInput = document.getElementById('manual_batch_size');
+    const sendBtn = document.getElementById('sendBatchBtn');
+    const analysisText = document.getElementById('analysisText');
+    const targetBadge = document.getElementById('analysisTargetBadge');
+
+    const targetCount = currentStatsData.stats[audienceVal] || 0;
+    const quota = currentStatsData.remaining_today !== undefined ? currentStatsData.remaining_today : remainingTodayQuota;
+
+    if (targetBadge) targetBadge.innerText = `Target: ${targetCount} Students`;
+
+    let recommendationMsg = '';
+    let recommendedBatch = 0;
+
+    if (quota <= 0) {
+        recommendationMsg = `<strong>⚠️ Daily SMTP Limit Reached (0/100 remaining in 24h).</strong> No more emails can be sent right now. Please wait until the 24-hour cycle resets before sending batch to <strong>${branchText}</strong>.`;
+        recommendedBatch = 0;
+        if (sendBtn) sendBtn.disabled = true;
+    } else if (targetCount === 0) {
+        recommendationMsg = `<strong>ℹ️ No Unsent Students Found.</strong> All eligible students in <strong>${branchText}</strong> matching this filter have already been reached or none fit the criteria.`;
+        recommendedBatch = 0;
+        if (sendBtn) sendBtn.disabled = true;
+    } else if (targetCount <= quota) {
+        recommendationMsg = `<strong>💡 Senior Developer Analysis & Recommendation:</strong> Target audience is <strong>${targetCount} students</strong> in <strong>${branchText}</strong>. Since you have <strong>${quota} remaining daily SMTP slots</strong>, you can safely send all <strong>${targetCount} emails</strong> in 1 batch.`;
+        recommendedBatch = targetCount;
+        if (sendBtn) sendBtn.disabled = false;
+    } else {
+        recommendationMsg = `<strong>⚠️ Senior Developer Analysis & Recommendation:</strong> Target audience is <strong>${targetCount} students</strong> in <strong>${branchText}</strong>, but today's remaining SMTP capacity is <strong>${quota} mails</strong> (capped at 100/24h). Recommended max batch size for today is <strong>${quota}</strong>. The remaining <strong>${targetCount - quota} students</strong> should be dispatched tomorrow after quota resets.`;
+        recommendedBatch = quota;
+        if (sendBtn) sendBtn.disabled = false;
+    }
+
+    if (analysisText) analysisText.innerHTML = recommendationMsg;
+    if (batchInput && recommendedBatch > 0) {
+        batchInput.value = recommendedBatch;
+    } else if (batchInput && targetCount === 0) {
+        batchInput.value = 0;
+    }
+}
+
 async function startZiyaratBatchSend(campaignId) {
     const batchSizeInput = document.getElementById('manual_batch_size');
     const audienceFilter = document.getElementById('audience_filter').value;
+    const branchFilter = document.getElementById('branch_filter').value;
     const totalToProcess = parseInt(batchSizeInput.value);
     
     if (isNaN(totalToProcess) || totalToProcess < 1) {
@@ -361,7 +483,7 @@ async function startZiyaratBatchSend(campaignId) {
         return;
     }
 
-    if (!confirm(`Are you sure you want to send up to ${totalToProcess} Ziyarat emails now?`)) return;
+    if (!confirm(`Are you sure you want to send up to ${totalToProcess} Ziyarat emails for branch [${branchFilter}] now?`)) return;
 
     const btn = document.getElementById('sendBatchBtn');
     const progressDiv = document.getElementById('batchProgress');
@@ -383,7 +505,7 @@ async function startZiyaratBatchSend(campaignId) {
             const response = await fetch('ajax_ziyarat_broadcast.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `campaign_id=${campaignId}&batch_size=1&audience_filter=${audienceFilter}`
+                body: `campaign_id=${campaignId}&batch_size=1&audience_filter=${audienceFilter}&branch_filter=${encodeURIComponent(branchFilter)}`
             });
             
             const result = await response.json();
@@ -425,6 +547,9 @@ async function startZiyaratBatchSend(campaignId) {
 
     showToast(`Batch completed: ${successful} sent, ${failed} failed.`, failed > 0 ? 'warning' : 'success');
     
+    // Refresh stats dynamically after batch send
+    loadAudienceStats(campaignId);
+
     const reloadBtn = document.createElement('button');
     reloadBtn.className = "btn btn-primary mt-3";
     reloadBtn.innerHTML = "<i class='fas fa-sync'></i> Refresh Dashboard";
@@ -460,6 +585,12 @@ async function sendTestMail(campaignId) {
         showToast('Could not connect to server for test send.', 'error');
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (activeCampaignId > 0) {
+        loadAudienceStats(activeCampaignId);
+    }
+});
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
