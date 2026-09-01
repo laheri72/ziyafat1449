@@ -171,13 +171,14 @@ require_once '../includes/header.php';
                                 <td data-label="Joined"><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
                                 <td data-label="Actions">
                                     <div class="action-buttons">
-                                        <a href="user_details.php?id=<?php echo $user['id']; ?>" class="btn btn-primary btn-sm">
+                                        <a href="user_details.php?id=<?php echo $user['id']; ?>" class="btn btn-primary btn-sm" aria-label="View user details">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <?php if ($user['id'] != $_SESSION['user_id'] && !($is_finance_coordinator && $user['role'] === 'admin')): ?>
                                             <a href="delete_user.php?id=<?php echo $user['id']; ?>" 
                                                class="btn btn-danger btn-sm"
-                                               onclick="return confirm('Are you sure you want to delete this user?')">
+                                               onclick="return confirm('Are you sure you want to delete this user?')"
+                                               aria-label="Delete user">
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         <?php endif; ?>
