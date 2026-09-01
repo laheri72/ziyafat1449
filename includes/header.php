@@ -231,13 +231,13 @@ init_session();
                 <!-- Topbar -->
                 <header class="topbar">
                     <div class="topbar-left">
-                        <button class="menu-toggle" id="menuToggle">
+                        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu">
                             <i class="fas fa-bars"></i>
                         </button>
 
                         <div class="topbar-search">
                             <i class="fas fa-search"></i>
-                            <input type="text" placeholder="Search...">
+                            <input type="text" placeholder="Search..." aria-label="Search">
                         </div>
                     </div>
 
