@@ -222,14 +222,16 @@ require_once '../includes/header.php';
                                 <td>
                                     <a href="edit_contribution.php?id=<?php echo $transaction['id']; ?>&user_id=<?php echo $user_id; ?>" 
                                        class="btn btn-primary btn-sm"
-                                       title="Edit Contribution">
-                                        <i class="fas fa-edit"></i>
+                                       title="Edit Contribution"
+                                       aria-label="Edit Contribution <?php echo htmlspecialchars($transaction['transaction_reference']); ?>">
+                                        <i class="fas fa-edit" aria-hidden="true"></i>
                                     </a>
                                     <a href="delete_contribution.php?id=<?php echo $transaction['id']; ?>&user_id=<?php echo $user_id; ?>" 
                                        class="btn btn-danger btn-sm"
                                        onclick="return confirm('Are you sure you want to delete this contribution?')"
-                                       title="Delete Contribution">
-                                        <i class="fas fa-trash"></i>
+                                       title="Delete Contribution"
+                                       aria-label="Delete Contribution <?php echo htmlspecialchars($transaction['transaction_reference']); ?>">
+                                        <i class="fas fa-trash" aria-hidden="true"></i>
                                     </a>
                                 </td>
                             </tr>
