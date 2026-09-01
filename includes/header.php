@@ -231,7 +231,7 @@ init_session();
                 <!-- Topbar -->
                 <header class="topbar">
                     <div class="topbar-left">
-                        <button class="menu-toggle" id="menuToggle">
+                        <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
                             <i class="fas fa-bars"></i>
                         </button>
 
