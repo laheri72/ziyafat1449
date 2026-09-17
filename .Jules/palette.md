@@ -1,0 +1,3 @@
+## 2024-05-17 - Added Accessibility Labels to Header Components
+**Learning:** Icon-only buttons (like the menu toggle) and inputs lacking explicit labels (like the topbar search) are a common accessibility gap. Adding `aria-label`, `title` (for visual tooltip fallback), and `aria-hidden="true"` to the decorative FontAwesome elements ensures these core navigation features are usable by screen readers without altering the visual design.
+**Action:** Always verify that all icon-only interactive elements and visually-unlabeled inputs in global components (like headers/sidebars) have explicit ARIA labels.
